@@ -1,10 +1,10 @@
-import type { Config } from "drizzle-kit";
+import type { Config } from "drizzle-kit"
 
 export default {
-  schema: "./lib/schema.ts", // path to your Drizzle schema
-  out: "./drizzle",          // migrations output folder
-  dialect: "sqlite",
+  schema: "./lib/schema.ts",
+  out: "./drizzle",
+  dialect: "postgresql",
   dbCredentials: {
-    url: "./sqlite.db", // SQLite file used by your app (adjust if different)
+    url: process.env.DATABASE_URL!,
   },
-} satisfies Config;
+} satisfies Config

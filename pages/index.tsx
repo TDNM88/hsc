@@ -56,14 +56,14 @@ export default function Landing() {
   }, [])
 
   return (
-    <Layout title="London SSI - Giao dịch ngoại hối và đầu tư tài chính">
+    <Layout title="London HSC- Giao dịch ngoại hối và đầu tư tài chính">
       {/* Market Data Ticker */}
       <div className="w-full h-[46px] overflow-hidden">
         <TradingViewTickerTape />
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
+      <div className="bg-white container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Left Column - Image and News */}
           <div className="md:col-span-1">
@@ -74,48 +74,45 @@ export default function Landing() {
                 className="w-full h-auto mb-4"
               />
               <img
-                src="/slide4.jpg"
+                src="/slide1.jpg"
                 alt="London Stock Exchange"
                 className="w-full h-auto mb-4 absolute top-0 left-0 opacity-0 transition-opacity duration-1000"
               />
             </div>
-            <h2 className="text-lg font-bold mt-2">
-              Sàn giao dịch chứng khoán London SSI chào đón Thông đốc Samuel
-              Garcia tại Nuevo León, Mexico
+            <h2 className="text-lg font-bold mt-2 text-black">
+              Sàn giao dịch chứng khoán London HSC chào đón Thông đốc Samuel Garcia tại Nuevo León, Mexico
             </h2>
-            <p className="text-sm mt-2">
-              Sàn giao dịch chứng khoán London SSI rát hân hạnh được chào đón
-              Samuel Garcia tại vùng đất lớn của mình, nơi ông đã mang lại nhiều
-              cơ hội giao dịch mới trong một thời gian ngắn. Ông đã làm việc với
+            <p className="text-sm mt-2 text-black">
+              Sàn giao dịch chứng khoán London HSC rất hân hạnh được chào đón Thông đốc Samuel Garcia tại vùng đất lớn của mình, nơi ông đã mang lại nhiều cơ hội giao dịch mới trong một thoi gian ngắn. Ông đã làm việc với
               các công ty con để đảm bảo các cơ hội trong khu vực của mình và
               các khu vực khác.
             </p>
           </div>
 
-          {/* Center Column - London SSI Info */}
+          {/* Center Column - London HSCInfo */}
           <div className="md:col-span-1">
             <div>
-              <h2 className="text-lg font-bold">LONDON SSI</h2>
-              <p className="text-sm mt-2">
-                Sàn giao dịch chứng khoán London (SSI) là sàn giao dịch chứng
+              <h2 className="text-lg font-bold text-black">LONDON HSC</h2>
+              <p className="text-sm mt-2 text-black">
+                Sàn giao dịch chứng khoán London (HSC) là sàn giao dịch chứng
                 khoán chính ở Vương quốc Anh và lớn nhất ở châu Âu. Thành lập
                 chính thức từ năm 1773, các sàn giao dịch khu vực được sáp nhập
                 vào năm 1973 để hình thành nên Sàn giao dịch chứng khoán Vương
                 quốc Anh và Ireland, sau đó đổi tên thành Sàn giao dịch chứng
-                khoán London (SSI)
+                khoán London (HSC)
               </p>
             </div>
             
             <div className="mt-12">
-              <h2 className="text-lg font-bold">
-                Nội dung về sàn giao dịch chứng khoán London SSI
+              <h2 className="text-lg font-bold text-black">
+                Nội dung về sàn giao dịch chứng khoán London HSC
               </h2>
-              <p className="text-sm mt-2">
-                Sàn giao dịch chứng khoán London (SSI) là sàn giao dịch chứng
+              <p className="text-sm mt-2 text-black">
+                Sàn giao dịch chứng khoán London (HSC) là sàn giao dịch chứng
                 khoán quốc tế nhất với hàng ngàn công ty từ hơn 60 quốc gia
                   và là nguồn hàng đầu của tính thanh khoản thị trường vốn, giá
                   chuẩn và dữ liệu thị trường ở châu Âu. Có các quan hệ đối tác
-                  với các sàn giao dịch quốc tế ở châu Á và châu Phi, SSI dự
+                  với các sàn giao dịch quốc tế ở châu Á và châu Phi, HSCdự
                   định loại bỏ các rào cản về chi phí và các qui định khỏi thị
                   trường vốn trên toàn thế giới.
                 </p>
@@ -142,7 +139,7 @@ export default function Landing() {
                 allowTransparency={true}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 referrerPolicy="strict-origin-when-cross-origin"
-                  src="https://www.tradingview-widget.com/embed-widget/symbol-info/?locale=vi_VN&amp;symbol=SPREADEX%3AFTSE#%7B%22symbol%22%3A%22SPREADEX%3AFTSE%22%2C%22width%22%3A%22100%25%22%2C%22colorTheme%22%3A%22light%22%2C%22isTransparent%22%3Afalse%2C%22height%22%3A320%2C%22utm_source%22%3A%22london-ssi.com%22%2C%22utm_medium%22%3A%22widget%22%2C%22utm_campaign%22%3A%22symbol-info%22%2C%22page-uri%22%3A%22london-ssi.com%2F%22%7D"
+                  src="https://www.tradingview-widget.com/embed-widget/symbol-info/?locale=vi_VN&amp;symbol=SPREADEX%3AFTSE#%7B%22symbol%22%3A%22SPREADEX%3AFTSE%22%2C%22width%22%3A%22100%25%22%2C%22colorTheme%22%3A%22light%22%2C%22isTransparent%22%3Afalse%2C%22height%22%3A320%2C%22utm_source%22%3A%22london-HSC.com%22%2C%22utm_medium%22%3A%22widget%22%2C%22utm_campaign%22%3A%22symbol-info%22%2C%22page-uri%22%3A%22london-HSC.com%2F%22%7D"
                   title="symbol info TradingView widget"
                   lang="en"
                   allowFullScreen
@@ -153,7 +150,7 @@ export default function Landing() {
         </div>
 
       {/* Chart Section */}
-      <div className="py-8 bg-white-900">
+      <div className="py-8 bg-white">
         <div className="container mx-auto px-4">
           <h2 className="text-lg font-bold text-black mb-2">Chi số xu hướng</h2>
           <p className="text-gray-300 text-sm mb-4 text-black">
@@ -177,7 +174,7 @@ export default function Landing() {
           </div>
           <div className="text-white space-y-4">
             <h2 className="text-3xl font-bold">
-              Sở giao dịch chứng khoán London SSI và nền tảng WisdomTree ở châu
+              Sở giao dịch chứng khoán London HSCvà nền tảng WisdomTree ở châu
               Âu
             </h2>
             <p className="text-sm">

@@ -1,198 +1,168 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/router"
-import Link from "next/link"
-import { useAuth } from "../lib/auth-context"
-import { Button } from "../components/ui/button"
-import { Input } from "../components/ui/input"
-import { Label } from "../components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
-import { Alert, AlertDescription } from "../components/ui/alert"
-import { Loader2 } from "lucide-react"
+import Layout from "../components/layout/Layout"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useToast } from "@/components/ui/use-toast"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 
-export default function RegisterPage() {
-  const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    name: "",
-    phone: "",
+const formSchema = z
+  .object({
+    username: z.string().min(3, "Tên đăng nhập phải có ít nhất 3 ký tự"),
+    password: z
+      .string()
+      .min(6, "Mật khẩu phải có ít nhất 6 ký tự")
+      .max(16, "Mật khẩu không quá 16 ký tự"),
+    confirmPassword: z.string(),
   })
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Mật khẩu xác nhận không khớp",
+    path: ["confirmPassword"],
+  })
 
-  const { register, user } = useAuth()
+type FormValues = z.infer<typeof formSchema>
+
+export default function Register() {
+  const { toast } = useToast()
   const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    if (user) {
-      router.push("/trade")
-    }
-  }, [user, router])
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+      confirmPassword: "",
+    },
+  })
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-
-    if (formData.password !== formData.confirmPassword) {
-      setError("Mật khẩu xác nhận không khớp")
-      return
-    }
-
-    if (formData.password.length < 6) {
-      setError("Mật khẩu phải có ít nhất 6 ký tự")
-      return
-    }
-
-    setLoading(true)
-
+  const onSubmit = async (values: FormValues) => {
+    setIsLoading(true)
     try {
-      await register({
-        username: formData.username,
-        email: formData.email,
-        password: formData.password,
-        name: formData.name,
-        phone: formData.phone || undefined,
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: values.username,
+          password: values.password,
+        }),
       })
-      // Redirect will happen in useEffect
-    } catch (err: any) {
-      setError(err.message || "Đăng ký thất bại")
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Đăng ký thất bại')
+      }
+
+      // Show success message and redirect to login page after 2 seconds
+      toast({
+        title: 'Đăng ký thành công!',
+        description: 'Vui lòng kiểm tra email để xác thực tài khoản. Bạn sẽ được chuyển hướng về trang đăng nhập.',
+      })
+      setTimeout(() => {
+        router.push('/login')
+      }, 2000)
+    } catch (error) {
+      console.error('Registration error:', error)
+      toast({
+        title: 'Lỗi',
+        description: error instanceof Error ? error.message : 'Đăng ký thất bại. Vui lòng thử lại sau.',
+        variant: 'destructive',
+      })
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Đăng ký</CardTitle>
-          <CardDescription className="text-center">Tạo tài khoản mới để bắt đầu giao dịch</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="username">Tên đăng nhập</Label>
-              <Input
-                id="username"
-                name="username"
-                type="text"
-                placeholder="username"
-                value={formData.username}
-                onChange={handleChange}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="your@email.com"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="name">Họ và tên</Label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                placeholder="Nguyễn Văn A"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Số điện thoại (tùy chọn)</Label>
-              <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                placeholder="0123456789"
-                value={formData.phone}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Mật khẩu</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Đang đăng ký...
-                </>
-              ) : (
-                "Đăng ký"
-              )}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+    <Layout title="Đăng ký tài khoản - London SSI">
+      <div className="min-h-screen flex items-center justify-center bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-white">Tạo tài khoản mới</h2>
+            <p className="mt-2 text-center text-sm text-gray-400">
               Đã có tài khoản?{" "}
-              <Link href="/login" className="text-blue-600 hover:underline font-medium">
+              <button
+                onClick={() => router.push("/login")}
+                className="font-medium text-blue-400 hover:text-blue-300"
+              >
                 Đăng nhập ngay
-              </Link>
+              </button>
             </p>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          <div className="bg-gray-800 p-8 rounded-lg shadow-lg">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username" className="text-white">
+                  Tên đăng nhập *
+                </Label>
+                <Input
+                  id="username"
+                  placeholder="Tên đăng nhập"
+                  className="bg-gray-700 border-gray-600 text-white"
+                  {...form.register("username")}
+                />
+                {form.formState.errors.username && (
+                  <p className="text-red-500 text-sm">
+                    {form.formState.errors.username.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-white">
+                  Mật khẩu *
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Mật khẩu"
+                  className="bg-gray-700 border-gray-600 text-white"
+                  {...form.register("password")}
+                />
+                {form.formState.errors.password && (
+                  <p className="text-red-500 text-sm">
+                    {form.formState.errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-white">
+                  Xác nhận mật khẩu *
+                </Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Xác nhận mật khẩu"
+                  className="bg-gray-700 border-gray-600 text-white"
+                  {...form.register("confirmPassword")}
+                />
+                {form.formState.errors.confirmPassword && (
+                  <p className="text-red-500 text-sm">
+                    {form.formState.errors.confirmPassword.message}
+                  </p>
+                )}
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 h-10 mt-6"
+                disabled={isLoading}
+              >
+                {isLoading ? "Đang xử lý..." : "Đăng ký"}
+              </Button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </Layout>
   )
 }

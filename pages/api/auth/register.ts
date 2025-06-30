@@ -1,102 +1,119 @@
 import type { NextApiRequest, NextApiResponse } from "next"
-import { createUserSchema } from "../../../lib/schema"
-import {
-  createUser,
-  emailExists,
-  usernameExists,
-  generateToken,
-  setAuthCookie,
-  checkRateLimit,
-  logLoginAttempt,
-} from "../../../lib/auth"
+import { z } from "zod"
+import { register, emailExists, usernameExists } from "@/lib/auth"
+import { withRateLimit } from "@/lib/api-utils"
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+// Define the registration schema
+type RegisterInput = {
+  email: string
+  name: string
+  username: string
+  password: string
+  phone?: string
+}
+
+const registerSchema = z.object({
+  email: z.string().email("Email không hợp lệ"),
+  name: z.string().min(1, "Tên là bắt buộc"),
+  username: z.string()
+    .min(3, "Tên đăng nhập phải có ít nhất 3 ký tự")
+    .max(20, "Tên đăng nhập không được vượt quá 20 ký tự")
+    .regex(
+      /^[a-zA-Z0-9_]+$/,
+      "Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới"
+    ),
+  password: z.string()
+    .min(8, "Mật khẩu phải có ít nhất 8 ký tự")
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/, 
+      "Mật khẩu phải chứa ít nhất một chữ hoa, một chữ thường và một số"
+    ),
+  phone: z.string()
+    .regex(
+      /^[+]?[(]?[0-9]{1,4}[)]?[-\s\./0-9]*$/, 
+      "Số điện thoại không hợp lệ"
+    )
+    .optional()
+})
+
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" })
   }
 
-  const clientIp = (req.headers["x-forwarded-for"] as string) || req.connection.remoteAddress || "unknown"
-  const userAgent = req.headers["user-agent"]
-
   try {
-    // Check rate limiting
-    const canProceed = await checkRateLimit(clientIp, 3, 15) // 3 attempts per 15 minutes
-    if (!canProceed) {
-      await logLoginAttempt(null, clientIp, userAgent, false)
-      return res.status(429).json({
-        error: "Quá nhiều lần thử đăng ký. Vui lòng thử lại sau 15 phút.",
-      })
-    }
-
-    // Validate input
-    const validation = createUserSchema.safeParse(req.body)
-    if (!validation.success) {
-      await logLoginAttempt(null, clientIp, userAgent, false)
+    // Validate request body
+    const result = registerSchema.safeParse(req.body)
+    if (!result.success) {
       return res.status(400).json({
-        error: "Dữ liệu không hợp lệ",
-        details: validation.error.errors,
+        error: "Lỗi xác thực",
+        details: result.error.errors,
       })
     }
+    const validatedData = result.data
 
-    const { email, username, password, name, phone } = validation.data
+    const { email, name, username, password, phone } = validatedData
 
-    // Check if email already exists
-    if (await emailExists(email)) {
-      await logLoginAttempt(null, clientIp, userAgent, false)
-      return res.status(400).json({ error: "Email đã được sử dụng" })
-    }
+      // Check if email already exists
+      const [emailExistsResult, usernameExistsResult] = await Promise.all([
+        emailExists(email),
+        usernameExists(username)
+      ])
 
-    // Check if username already exists
-    if (await usernameExists(username)) {
-      await logLoginAttempt(null, clientIp, userAgent, false)
-      return res.status(400).json({ error: "Tên đăng nhập đã được sử dụng" })
-    }
+      if (emailExistsResult) {
+        return res.status(400).json({
+          error: "Email đã được sử dụng",
+          field: "email"
+        })
+      }
 
-    // Create user
-    const user = await createUser({
-      email,
-      name,
-      username,
-      password,
-      phone,
-    })
+      if (usernameExistsResult) {
+        return res.status(400).json({
+          error: "Tên đăng nhập đã được sử dụng",
+          field: "username"
+        })
+      }
 
-    // Generate JWT token
-    const token = generateToken({
-      userId: user.id,
-      email: user.email,
-      username: user.username,
-      role: user.role,
-    })
+      // Create user
+      const registerResult = await register({
+        email: validatedData.email,
+        firstName: validatedData.name.split(' ')[0],
+        lastName: validatedData.name.split(' ').slice(1).join(' '),
+        username: validatedData.username,
+        password: validatedData.password,
+        phone: validatedData.phone,
+      });
 
-    // Set auth cookie
-    setAuthCookie(res, token)
+      if (!registerResult.success) {
+        return res.status(400).json({
+          error: registerResult.error || "Đã xảy ra lỗi khi tạo tài khoản",
+        });
+      }
 
-    // Log successful registration
-    await logLoginAttempt(user.id, clientIp, userAgent, true)
-
-    res.status(201).json({
-      message: "Đăng ký thành công",
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        username: user.username,
-        role: user.role,
-        balance: user.balance,
-        isVerified: user.isVerified,
-      },
-    })
+      // Return success response
+      return res.status(201).json({
+        message: "Tạo tài khoản thành công. Bạn có thể đăng nhập ngay bây giờ.",
+        user: registerResult.user,
+        token: registerResult.token,
+      });
   } catch (error) {
     console.error("Registration error:", error)
-    await logLoginAttempt(null, clientIp, userAgent, false)
-
-    if (error instanceof Error) {
-      if (error.message === "Email already exists" || error.message === "Username already exists") {
-        return res.status(400).json({ error: error.message })
-      }
-    }
-
-    res.status(500).json({ error: "Lỗi server. Vui lòng thử lại sau." })
+    return res.status(500).json({
+      error: "Lỗi server. Vui lòng thử lại sau.",
+    })
   }
+}
+
+// Apply rate limiting
+export default async function rateLimitedHandler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return withRateLimit(
+    req,
+    res,
+    () => handler(req, res),
+    'auth-register',
+    'Quá nhiều yêu cầu đăng ký. Vui lòng thử lại sau.'
+  )
 }

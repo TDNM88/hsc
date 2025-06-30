@@ -4,7 +4,7 @@ import { Separator } from "@/components/ui/separator"
 
 export default function AboutPage() {
   return (
-    <Layout title="Về Chúng Tôi | London SSI">
+    <Layout title="Về Chúng Tôi | London HSC">
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl font-bold text-center mb-8">Về Chúng Tôi</h1>
@@ -15,7 +15,7 @@ export default function AboutPage() {
             </CardHeader>
             <CardContent>
               <p className="mb-4">
-                London SSI là một trong những đơn vị hàng đầu trong lĩnh vực cung cấp dịch vụ giao dịch tài chính, 
+                London HSClà một trong những đơn vị hàng đầu trong lĩnh vực cung cấp dịch vụ giao dịch tài chính, 
                 cam kết mang đến cho khách hàng những trải nghiệm giao dịch minh bạch, an toàn và hiệu quả.
               </p>
               <p>

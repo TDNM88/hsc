@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/router"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "../lib/auth-context"
 import { Button } from "../components/ui/button"
@@ -19,12 +19,14 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  const { login, user } = useAuth()
+  const { login, loading: authLoading, user } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
     if (user) {
-      const returnUrl = router.query.returnUrl as string
+      // Get return URL from query parameters
+      const searchParams = new URLSearchParams(window.location.search)
+      const returnUrl = searchParams.get('returnUrl')
       router.push(returnUrl || "/trade")
     }
   }, [user, router])
@@ -32,15 +34,12 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    setLoading(true)
-
+    
     try {
       await login(email, password)
-      // Redirect will happen in useEffect
-    } catch (err: any) {
-      setError(err.message || "Đăng nhập thất bại")
-    } finally {
-      setLoading(false)
+    } catch (err) {
+      console.error('Login error:', err)
+      setError(err instanceof Error ? err.message : 'Đăng nhập thất bại. Vui lòng thử lại.')
     }
   }
 
@@ -60,15 +59,15 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email hoặc tên đăng nhập</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
-                type="text"
-                placeholder="your@email.com hoặc username"
+                type="email"
+                placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={loading}
+                disabled={authLoading}
               />
             </div>
 
@@ -81,36 +80,37 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                disabled={loading}
+                disabled={authLoading}
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
+            <Button type="submit" className="w-full" disabled={authLoading}>
+              {authLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Đang đăng nhập...
+                  Đang xử lý...
                 </>
               ) : (
-                "Đăng nhập"
+                'Đăng nhập'
               )}
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-4 text-center">
+            <p className="text-sm">
+              <Link href="/forgot-password" className="text-blue-600 hover:underline font-medium">
+                Quên mật khẩu?
+              </Link>
+            </p>
+          </div>
+
+          <div className="mt-4 text-center">
             <p className="text-sm text-gray-600">
               Chưa có tài khoản?{" "}
               <Link href="/register" className="text-blue-600 hover:underline font-medium">
                 Đăng ký ngay
               </Link>
             </p>
-          </div>
-
-          {/* Test accounts info */}
-          <div className="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-600">
-            <p className="font-medium mb-1">Tài khoản test:</p>
-            <p>Admin: admin@londonssi.com / admin123456</p>
-            <p>User: user@londonssi.com / user123456</p>
           </div>
         </CardContent>
       </Card>
