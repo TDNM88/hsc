@@ -53,7 +53,10 @@ module.constructor.prototype.require = function(id) {
 
 console.log('✅ Module patching complete');
 
+// Thiết lập cấu hình Next.js cho Vercel
+process.env.NEXT_CONFIG_FILE = 'next.config.vercel.js';
+
 // Nếu file này được yêu cầu trực tiếp, không cần thực hiện thêm hành động nào
 if (require.main !== module) {
-  console.log('✅ Vercel build script loaded as a module');
+  console.log('✅ Vercel build script loaded as a module with next.config.vercel.js');
 }

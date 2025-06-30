@@ -1,0 +1,14 @@
+# Các file liên quan đến việc sửa lỗi local không cần thiết trên Vercel
+patch-*.js
+build.js
+direct-build.js
+*.backup
+*.original
+*.bat
+
+# Các file tạm thời và cache
+.next/cache
+.vercel/cache
+
+# Các file cấu hình không cần thiết
+next.config.direct.js
