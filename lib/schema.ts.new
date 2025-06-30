@@ -1,0 +1,181 @@
+import {
+  pgTable,
+  serial,
+  varchar,
+  text,
+  timestamp,
+  decimal,
+  integer,
+  boolean,
+  jsonb,
+  uuid,
+  index,
+  pgTableCreator,
+} from "drizzle-orm/pg-core";
+import { relations, InferModel } from "drizzle-orm";
+
+// Create table creator function to handle self-references
+const createTable = pgTableCreator((name) => `app_${name}`);
+
+// Users table
+export const users = createTable("users", {
+  id: serial("id").primaryKey(),
+  uuid: uuid("uuid").defaultRandom().notNull().unique(),
+  username: varchar("username", { length: 50 }).notNull().unique(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  password: varchar("password", { length: 255 }).notNull(),
+  firstName: varchar("first_name", { length: 100 }),
+  lastName: varchar("last_name", { length: 100 }),
+  phone: varchar("phone", { length: 20 }),
+  balance: decimal("balance", { precision: 15, scale: 2 }).default("0.00").notNull(),
+  role: varchar("role", { length: 20 }).default("user").notNull(),
+  status: varchar("status", { length: 20 }).default("active").notNull(),
+  isEmailVerified: boolean("is_email_verified").default(false).notNull(),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
+  referralCode: varchar("referral_code", { length: 20 }).unique(),
+  referredBy: integer("referred_by"),
+  lastLoginAt: timestamp("last_login_at"),
+  lastLoginIp: varchar("last_login_ip", { length: 45 }),
+  loginAttempts: integer("login_attempts").default(0).notNull(),
+  lockedUntil: timestamp("locked_until"),
+  resetPasswordToken: varchar("reset_password_token", { length: 100 }),
+  resetPasswordExpires: timestamp("reset_password_expires"),
+  profileImage: text("profile_image"),
+  isLocked: boolean("is_locked").default(false).notNull(),
+  isSuspended: boolean("is_suspended").default(false).notNull(),
+  isDeleted: boolean("is_deleted").default(false).notNull(),
+  deletedAt: timestamp("deleted_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  emailIdx: index("users_email_idx").on(table.email),
+  usernameIdx: index("users_username_idx").on(table.username),
+}));
+
+// User types
+export type User = InferModel<typeof users>;
+export type NewUser = InferModel<typeof users, 'insert'>;
+
+// Rounds table for trading
+export const rounds = createTable("rounds", {
+  id: serial("id").primaryKey(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  result: boolean("result"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Round types
+export type Round = InferModel<typeof rounds>;
+export type NewRound = InferModel<typeof rounds, 'insert'>;
+
+// Trading sessions table
+export const tradingSessions = createTable("trading_sessions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  roundId: integer("round_id").notNull().references(() => rounds.id),
+  symbol: varchar("symbol", { length: 20 }).notNull(),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  direction: varchar("direction", { length: 10 }).notNull(),
+  status: varchar("status", { length: 20 }).default("pending").notNull(),
+  profit: decimal("profit", { precision: 15, scale: 2 }),
+  result: boolean("result"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Trading session types
+export type TradingSession = InferModel<typeof tradingSessions>;
+export type NewTradingSession = InferModel<typeof tradingSessions, 'insert'>;
+
+// Transactions table
+export const transactions = createTable("transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  type: varchar("type", { length: 20 }).notNull(), // deposit, withdrawal, trade, bonus, etc.
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  status: varchar("status", { length: 20 }).default("pending").notNull(),
+  description: text("description"),
+  reference: varchar("reference", { length: 100 }).unique(),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Transaction types
+export type Transaction = InferModel<typeof transactions>;
+export type NewTransaction = InferModel<typeof transactions, 'insert'>;
+
+// User sessions table
+export const userSessions = createTable("user_sessions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  token: text("token").notNull(),
+  userAgent: text("user_agent"),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// User session types
+export type UserSession = InferModel<typeof userSessions>;
+export type NewUserSession = InferModel<typeof userSessions, 'insert'>;
+
+// Define all relations
+export const usersRelations = relations(users, ({ many, one }) => ({
+  referrer: one(users, {
+    fields: [users.referredBy],
+    references: [users.id],
+    relationName: 'referrer',
+  }),
+  tradingSessions: many(tradingSessions),
+  transactions: many(transactions),
+  sessions: many(userSessions),
+}));
+
+export const tradingSessionsRelations = relations(tradingSessions, ({ one }) => ({
+  user: one(users, {
+    fields: [tradingSessions.userId],
+    references: [users.id],
+  }),
+  round: one(rounds, {
+    fields: [tradingSessions.roundId],
+    references: [rounds.id],
+  }),
+}));
+
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  user: one(users, {
+    fields: [transactions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const userSessionsRelations = relations(userSessions, ({ one }) => ({
+  user: one(users, {
+    fields: [userSessions.userId],
+    references: [users.id],
+  }),
+}));
+
+// Add the foreign key reference for self-referential relationship
+declare module 'drizzle-orm/pg-core' {
+  export interface PgTableWithColumns<TRelations> {
+    _: {
+      columns: {
+        referredBy: {
+          references: (table: any) => any;
+        };
+      };
+    };
+  }
+}
+
+(users as any)._ = (users as any)._ || {};
+(users as any)._.columns = (users as any)._.columns || {};
+(users as any)._.columns.referredBy = {
+  references: (table: any) => table.id,
+};

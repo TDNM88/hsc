@@ -10,104 +10,79 @@ import {
   jsonb,
   uuid,
   index,
-} from "drizzle-orm/pg-core"
-import { relations } from "drizzle-orm"
+} from "drizzle-orm/pg-core";
+import { relations, InferModel } from "drizzle-orm";
 
-// Users table with comprehensive fields
-export const users = pgTable(
-  "users",
-  {
-    id: serial("id").primaryKey(),
-    uuid: uuid("uuid").defaultRandom().notNull().unique(),
-    username: varchar("username", { length: 50 }).notNull().unique(),
-    email: varchar("email", { length: 255 }).notNull().unique(),
-    password: varchar("password", { length: 255 }).notNull(),
-    firstName: varchar("first_name", { length: 100 }),
-    lastName: varchar("last_name", { length: 100 }),
-    fullName: varchar("full_name", { length: 200 }),
-    phone: varchar("phone", { length: 20 }),
-    dateOfBirth: timestamp("date_of_birth"),
-    gender: varchar("gender", { length: 10 }),
-    country: varchar("country", { length: 100 }),
-    city: varchar("city", { length: 100 }),
-    address: text("address"),
-    postalCode: varchar("postal_code", { length: 20 }),
-    balance: decimal("balance", { precision: 15, scale: 2 }).default("1000.00").notNull(),
-    currency: varchar("currency", { length: 3 }).default("USD").notNull(),
-    role: varchar("role", { length: 20 }).default("user").notNull(),
-    status: varchar("status", { length: 20 }).default("active").notNull(),
-    isVerified: boolean("is_verified").default(false).notNull(),
-    isEmailVerified: boolean("is_email_verified").default(false).notNull(),
-    isPhoneVerified: boolean("is_phone_verified").default(false).notNull(),
-    kycStatus: varchar("kyc_status", { length: 20 }).default("pending").notNull(),
-    kycLevel: integer("kyc_level").default(0).notNull(),
-    twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
-    twoFactorSecret: varchar("two_factor_secret", { length: 32 }),
-    referralCode: varchar("referral_code", { length: 20 }).unique(),
-    referredBy: integer("referred_by").references(() => users.id),
-    totalDeposits: decimal("total_deposits", { precision: 15, scale: 2 }).default("0.00").notNull(),
-    totalWithdrawals: decimal("total_withdrawals", { precision: 15, scale: 2 }).default("0.00").notNull(),
-    totalTrades: integer("total_trades").default(0).notNull(),
-    winningTrades: integer("winning_trades").default(0).notNull(),
-    losingTrades: integer("losing_trades").default(0).notNull(),
-    winRate: decimal("win_rate", { precision: 5, scale: 2 }).default("0.00").notNull(),
-    totalProfit: decimal("total_profit", { precision: 15, scale: 2 }).default("0.00").notNull(),
-    totalLoss: decimal("total_loss", { precision: 15, scale: 2 }).default("0.00").notNull(),
-    lastLoginAt: timestamp("last_login_at"),
-    lastLoginIp: varchar("last_login_ip", { length: 45 }),
-    loginAttempts: integer("login_attempts").default(0).notNull(),
-    lockedUntil: timestamp("locked_until"),
-    preferences: jsonb("preferences").default({}),
-    metadata: jsonb("metadata").default({}),
-    avatar: varchar("avatar", { length: 500 }),
-    timezone: varchar("timezone", { length: 50 }).default("UTC"),
-    language: varchar("language", { length: 10 }).default("en"),
-    theme: varchar("theme", { length: 10 }).default("light"),
-    notifications: jsonb("notifications").default({
-      email: true,
-      push: true,
-      sms: false,
-      trading: true,
-      marketing: false,
-    }),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
-    deletedAt: timestamp("deleted_at"),
-  },
-  (table) => ({
-    emailIdx: index("users_email_idx").on(table.email),
-    usernameIdx: index("users_username_idx").on(table.username),
-    referralCodeIdx: index("users_referral_code_idx").on(table.referralCode),
-    statusIdx: index("users_status_idx").on(table.status),
-    kycStatusIdx: index("users_kyc_status_idx").on(table.kycStatus),
-  }),
-)
+// Users table
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  uuid: uuid("uuid").defaultRandom().notNull().unique(),
+  username: varchar("username", { length: 50 }).notNull().unique(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  password: varchar("password", { length: 255 }).notNull(),
+  firstName: varchar("first_name", { length: 100 }),
+  lastName: varchar("last_name", { length: 100 }),
+  phone: varchar("phone", { length: 20 }),
+  balance: decimal("balance", { precision: 15, scale: 2 }).default("0.00").notNull(),
+  role: varchar("role", { length: 20 }).default("user").notNull(),
+  status: varchar("status", { length: 20 }).default("active").notNull(),
+  isEmailVerified: boolean("is_email_verified").default(false).notNull(),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
+  referralCode: varchar("referral_code", { length: 20 }).unique(),
+  referredBy: integer("referred_by"),
+  lastLoginAt: timestamp("last_login_at"),
+  lastLoginIp: varchar("last_login_ip", { length: 45 }),
+  loginAttempts: integer("login_attempts").default(0).notNull(),
+  lockedUntil: timestamp("locked_until"),
+  resetPasswordToken: varchar("reset_password_token", { length: 100 }),
+  resetPasswordExpires: timestamp("reset_password_expires"),
+  profileImage: text("profile_image"),
+  isLocked: boolean("is_locked").default(false).notNull(),
+  isSuspended: boolean("is_suspended").default(false).notNull(),
+  isDeleted: boolean("is_deleted").default(false).notNull(),
+  deletedAt: timestamp("deleted_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  emailIdx: index("users_email_idx").on(table.email),
+  usernameIdx: index("users_username_idx").on(table.username),
+}));
+
+// User types
+export type User = InferModel<typeof users>;
+export type NewUser = InferModel<typeof users, 'insert'>;
+
+// Rounds table for trading
+export const rounds = pgTable("rounds", {
+  id: serial("id").primaryKey(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  result: boolean("result"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 // Trading sessions table
-export const tradingSessions = pgTable(
-  "trading_sessions",
-  {
-    id: serial("id").primaryKey(),
-    uuid: uuid("uuid").defaultRandom().notNull().unique(),
-    symbol: varchar("symbol", { length: 20 }).notNull(),
-    startTime: timestamp("start_time").notNull(),
-    endTime: timestamp("end_time").notNull(),
-    startPrice: decimal("start_price", { precision: 15, scale: 5 }).notNull(),
-    endPrice: decimal("end_price", { precision: 15, scale: 5 }),
-    direction: varchar("direction", { length: 10 }),
-    status: varchar("status", { length: 20 }).default("active").notNull(),
-    totalTrades: integer("total_trades").default(0).notNull(),
-    totalVolume: decimal("total_volume", { precision: 15, scale: 2 }).default("0.00").notNull(),
-    metadata: jsonb("metadata").default({}),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  },
-  (table) => ({
-    symbolIdx: index("trading_sessions_symbol_idx").on(table.symbol),
-    statusIdx: index("trading_sessions_status_idx").on(table.status),
-    startTimeIdx: index("trading_sessions_start_time_idx").on(table.startTime),
-  }),
-)
+export const tradingSessions = pgTable("trading_sessions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  symbol: varchar("symbol", { length: 20 }).notNull(),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  direction: varchar("direction", { length: 10 }).notNull(),
+  status: varchar("status", { length: 20 }).default("pending").notNull(),
+  profit: decimal("profit", { precision: 15, scale: 2 }),
+  result: boolean("result"),
+  totalTrades: integer("total_trades").default(0).notNull(),
+  totalVolume: decimal("total_volume", { precision: 15, scale: 2 }).default("0.00").notNull(),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  symbolIdx: index("trading_sessions_symbol_idx").on(table.symbol),
+  statusIdx: index("trading_sessions_status_idx").on(table.status),
+  userIdIdx: index("trading_sessions_user_id_idx").on(table.userId),
+}));
 
 // Trades table
 export const trades = pgTable(
@@ -144,7 +119,7 @@ export const trades = pgTable(
     statusIdx: index("trades_status_idx").on(table.status),
     placedAtIdx: index("trades_placed_at_idx").on(table.placedAt),
   }),
-)
+);
 
 // Transactions table
 export const transactions = pgTable(
@@ -177,7 +152,7 @@ export const transactions = pgTable(
     referenceIdx: index("transactions_reference_idx").on(table.reference),
     createdAtIdx: index("transactions_created_at_idx").on(table.createdAt),
   }),
-)
+);
 
 // User sessions table for authentication
 export const userSessions = pgTable(
@@ -201,7 +176,7 @@ export const userSessions = pgTable(
     userIdIdx: index("user_sessions_user_id_idx").on(table.userId),
     expiresAtIdx: index("user_sessions_expires_at_idx").on(table.expiresAt),
   }),
-)
+);
 
 // KYC documents table
 export const kycDocuments = pgTable(
@@ -228,7 +203,7 @@ export const kycDocuments = pgTable(
     userIdIdx: index("kyc_documents_user_id_idx").on(table.userId),
     statusIdx: index("kyc_documents_status_idx").on(table.status),
   }),
-)
+);
 
 // Referrals table
 export const referrals = pgTable(
@@ -252,7 +227,7 @@ export const referrals = pgTable(
     referrerIdIdx: index("referrals_referrer_id_idx").on(table.referrerId),
     referredIdIdx: index("referrals_referred_id_idx").on(table.referredId),
   }),
-)
+);
 
 // Define relations
 export const usersRelations = relations(users, ({ many, one }) => ({
@@ -266,7 +241,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
     fields: [users.referredBy],
     references: [users.id],
   }),
-}))
+}));
 
 export const tradesRelations = relations(trades, ({ one }) => ({
   user: one(users, {
@@ -277,25 +252,29 @@ export const tradesRelations = relations(trades, ({ one }) => ({
     fields: [trades.sessionId],
     references: [tradingSessions.id],
   }),
-}))
+}));
 
 export const transactionsRelations = relations(transactions, ({ one }) => ({
   user: one(users, {
     fields: [transactions.userId],
     references: [users.id],
   }),
-}))
+}));
 
-export const tradingSessionsRelations = relations(tradingSessions, ({ many }) => ({
+export const tradingSessionsRelations = relations(tradingSessions, ({ many, one }) => ({
   trades: many(trades),
-}))
+  user: one(users, {
+    fields: [tradingSessions.userId],
+    references: [users.id],
+  }),
+}));
 
 export const userSessionsRelations = relations(userSessions, ({ one }) => ({
   user: one(users, {
     fields: [userSessions.userId],
     references: [users.id],
   }),
-}))
+}));
 
 export const kycDocumentsRelations = relations(kycDocuments, ({ one }) => ({
   user: one(users, {
@@ -306,7 +285,7 @@ export const kycDocumentsRelations = relations(kycDocuments, ({ one }) => ({
     fields: [kycDocuments.reviewedBy],
     references: [users.id],
   }),
-}))
+}));
 
 export const referralsRelations = relations(referrals, ({ one }) => ({
   referrer: one(users, {
@@ -319,17 +298,18 @@ export const referralsRelations = relations(referrals, ({ one }) => ({
     references: [users.id],
     relationName: "referred",
   }),
-}))
+}));
 
 // Export all tables
 export const schema = {
   users,
+  rounds,
   tradingSessions,
   trades,
   transactions,
   userSessions,
   kycDocuments,
   referrals,
-}
+};
 
-export default schema
+export default schema;
