@@ -50,7 +50,18 @@ export async function processDeposit(userId: number, amount: number, paymentMeth
   try {
     // Start a transaction
     return await db.transaction(async (tx: any) => {
-      // Create transaction record
+      // Lấy số dư hiện tại của người dùng
+      const [user] = await tx
+        .select({ balance: users.balance })
+        .from(users)
+        .where(eq(users.id, userId));
+
+      if (!user) throw new Error('User not found');
+      
+      const currentBalance = parseFloat(user.balance.toString());
+      const newBalance = currentBalance + amount;
+
+      // Create transaction record with all required fields
       const transaction = await tx
         .insert(transactions)
         .values({
@@ -60,7 +71,12 @@ export async function processDeposit(userId: number, amount: number, paymentMeth
           status: 'COMPLETED', // In a real app, this would be PENDING until payment is confirmed
           description: `Deposit via ${paymentMethod}`,
           reference: `DEP-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`,
-          metadata: JSON.stringify({ paymentMethod }), // Convert metadata to JSON string
+          balanceBefore: currentBalance.toString(),
+          balanceAfter: newBalance.toString(),
+          currency: 'VND', // Thêm trường currency theo schema
+          fee: '0.00', // Thêm phí giao dịch (mặc định là 0)
+          method: paymentMethod,
+          metadata: {}, // Sử dụng object trực tiếp thay vì JSON.stringify
           createdAt: new Date(),
           updatedAt: new Date()
         })
@@ -100,7 +116,10 @@ export async function processWithdrawal(userId: number, amount: number, paymentD
         throw new Error('Insufficient balance');
       }
 
-      // Create withdrawal transaction
+      const currentBalance = parseFloat(user.balance.toString());
+      const newBalance = currentBalance - amount;
+
+      // Create withdrawal transaction with all required fields
       const transaction = await tx
         .insert(transactions)
         .values({
@@ -110,7 +129,12 @@ export async function processWithdrawal(userId: number, amount: number, paymentD
           status: 'PENDING', // Requires manual approval
           description: 'Withdrawal request',
           reference: `WDR-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`,
-          metadata: JSON.stringify({ paymentDetails }), // Convert metadata to JSON string
+          balanceBefore: currentBalance.toString(),
+          balanceAfter: newBalance.toString(),
+          currency: 'VND', // Thêm trường currency theo schema
+          fee: '0.00', // Thêm phí giao dịch (mặc định là 0)
+          method: paymentDetails?.method || 'bank_transfer',
+          metadata: paymentDetails || {}, // Sử dụng object trực tiếp
           createdAt: new Date(),
           updatedAt: new Date(),
         })

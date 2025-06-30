@@ -1,6 +1,11 @@
 import { db } from "../lib/db";
-import { rounds, trades, users, tradeDirectionEnum, tradeStatusEnum } from "../lib/schema";
+import { rounds, trades, users } from "../lib/schema";
 import { and, eq, sql, desc } from "drizzle-orm";
+
+// Định nghĩa các enum thay vì import từ schema
+type TradeDirection = "UP" | "DOWN";
+type TradeStatus = "PENDING" | "SETTLED" | "CANCELLED";
+type TradeResult = "WON" | "LOST";
 
 /**
  * Shared-round worker
@@ -33,10 +38,14 @@ async function ensureCurrentRound() {
 
 async function settleDueRounds() {
   const now = new Date();
+  // Chỉ lấy các rounds đã kết thúc nhưng chưa được xử lý (dựa vào endTime và isActive)
   const dueRounds = await db
     .select()
     .from(rounds)
-    .where(and(eq(rounds.status, "PENDING" as any), sql`(${rounds.endTime} + interval '3 seconds') <= ${now}`));
+    .where(and(
+      eq(rounds.isActive, true),
+      sql`(${rounds.endTime} + interval '3 seconds') <= ${now}`
+    ));
 
   for (const round of dueRounds) {
     await settleRound(round.id);
@@ -51,14 +60,18 @@ async function fetchMarketPrice(symbol: string): Promise<number> {
 async function settleRound(roundId: number) {
   await db.transaction(async (tx: any) => {
     const [round] = await tx.select().from(rounds).where(eq(rounds.id, roundId));
-    if (!round || round.status !== "PENDING") return;
+    if (!round || !round.isActive) return; // Kiểm tra isActive thay vì status
 
     // For simplicity we use a generic symbol price; in production compute per symbol
     const closePrice = await fetchMarketPrice("BTCUSDT");
 
     await tx
       .update(rounds)
-      .set({ closePrice: closePrice.toString(), status: "SETTLED", settledAt: new Date() })
+      .set({ 
+        result: closePrice > 0, // Sử dụng trường result thay vì closePrice
+        isActive: false, // Đánh dấu round đã được xử lý
+        updatedAt: new Date() // Cập nhật thời gian thay vì settledAt
+      })
       .where(eq(rounds.id, roundId));
 
     const roundTrades = await tx.select().from(trades).where(eq(trades.sessionId, roundId));

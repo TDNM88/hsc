@@ -28,6 +28,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
     if (!user || Number.parseFloat(user.balance) < amount) {
       return res.status(400).json({ error: "Insufficient balance" })
     }
+    
+    // Lưu số dư hiện tại để sử dụng trong giao dịch
+    const currentBalance = Number.parseFloat(user.balance)
+    const newBalance = currentBalance - Number(amount)
 
     // Create withdrawal transaction and deduct balance
     await db.transaction(async (tx) => {
@@ -47,6 +51,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
         amount: amount.toString(),
         status: "pending",
         description: `Withdrawal to ${bankName} - ${bankAccount}`,
+        balanceBefore: currentBalance.toString(),
+        balanceAfter: newBalance.toString(),
+        currency: "VND", // Thêm trường currency theo schema
+        fee: "0.00" // Thêm phí giao dịch (mặc định là 0)
       })
     })
 

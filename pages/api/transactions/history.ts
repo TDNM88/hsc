@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import { requireAuth, withRateLimit } from "@/lib/api-utils"
 import { db } from "@/lib/db"
 import { transactions } from "@/lib/schema"
-import { eq, desc, count, and } from "drizzle-orm"
+import { eq, desc, count, and, SQL } from "drizzle-orm"
 
 async function handler(req: NextApiRequest, res: NextApiResponse, session: any) {
   if (req.method !== "GET") {
@@ -17,10 +17,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
 
     const userId = session.user.id
 
-    let whereCondition = eq(transactions.userId, userId)
+    // Tạo điều kiện truy vấn dựa trên các tham số
+    const conditions: SQL<unknown>[] = [eq(transactions.userId, userId)]
+    
     if (type && (type === "deposit" || type === "withdrawal")) {
-      whereCondition = and(whereCondition, eq(transactions.type, type as string))
+      conditions.push(eq(transactions.type, type as string))
     }
+    
+    // Kết hợp các điều kiện bằng and
+    const whereCondition = conditions.length > 1 
+      ? and(...conditions) 
+      : conditions[0]
 
     // Get user transactions with pagination
     const [userTransactions, totalCount] = await Promise.all([

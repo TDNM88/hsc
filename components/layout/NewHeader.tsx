@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
+import { Link } from 'lucide-react';
 
 const NewHeader = () => {
   const router = useRouter();
@@ -39,18 +40,17 @@ const NewHeader = () => {
           <div className="flex items-center justify-between h-full">
             {/* Left side - Logo and Menu */}
             <div className="flex items-center space-x-7">
-              <div className="flex-shrink-0">
-                <div className="relative w-[150px] h-[40px]">
+              <div className="h-full">
+                <div className="relative w-[150px] h-full">
                   <div className="relative w-full h-full">
                     <Image
                       src="/logo.png"
                       alt="London HSC"
-                      fill
                       className="mix-blend-multiply object-contain"
+                      width={150}
+                      height={140}
                       priority={true}
                       sizes="(max-width: 150px) 100vw, 150px"
-                      width={150}
-                      height={120}
                     />
                   </div>
                 </div>
@@ -90,15 +90,14 @@ const NewHeader = () => {
                 Đăng nhập
               </button>
               <div className="h-6 w-px bg-blue-600"></div>
-              <button 
-                className="bg-blue-600 text-white px-4 py-2 font-medium hover:bg-blue-700 transition-colors"
-                onClick={() => {
-                  handleRegister();
-                  setIsMenuOpen(false);
-                }}
-              >
-                Mở tài khoản
-              </button>
+              <Link href="/register">
+                <a 
+                  className="bg-blue-600 text-white px-4 py-2 font-medium hover:bg-blue-700 transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Mở tài khoản
+                </a>
+              </Link>
             </div>
 
             {/* Mobile menu button */}

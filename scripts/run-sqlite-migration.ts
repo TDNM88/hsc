@@ -2,45 +2,40 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { config } from '../config';
-import Database from 'better-sqlite3';
+import { db, sql } from '../lib/db';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function runMigrations() {
-  console.log('Starting SQLite migrations...');
+  console.log('Starting PostgreSQL migrations...');
   
-  // Ensure database directory exists
-  const dbPath = path.resolve(process.cwd(), config.sqlitePath || 'london.db');
-  const dbDir = path.dirname(dbPath);
-  
-  if (!fs.existsSync(dbDir)) {
-    console.log(`Creating database directory: ${dbDir}`);
-    fs.mkdirSync(dbDir, { recursive: true });
+  // Kiểm tra kết nối đến PostgreSQL
+  if (!config.database.url) {
+    throw new Error('DATABASE_URL không được cấu hình trong biến môi trường');
   }
   
-  // Connect to SQLite database
-  const db = new Database(dbPath);
+  console.log('Kết nối đến PostgreSQL...');
+  const result = await sql`SELECT version();`;
+  console.log('Kết nối thành công đến PostgreSQL:', result[0].version);
   
   try {
-    // Enable foreign keys
-    db.pragma('foreign_keys = ON');
-    
-    // Create migrations table if it doesn't exist
-    db.exec(`
+    // Tạo bảng migrations nếu chưa tồn tại
+    await sql`
       CREATE TABLE IF NOT EXISTS _migrations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         name TEXT NOT NULL UNIQUE,
         executed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
-    `);
+    `;
     
-    // Get list of executed migrations
+    // Lấy danh sách các migrations đã thực hiện
+    const executedMigrationsResult = await sql`SELECT name FROM _migrations`;
     const executedMigrations = new Set(
-      db.prepare('SELECT name FROM _migrations').all().map((m: any) => m.name)
+      executedMigrationsResult.map((m: any) => m.name)
     );
     
-    // Get all migration files
+    // Lấy tất cả các file migration
     const migrationsDir = path.join(__dirname, '..', 'db', 'migrations');
     const migrationFiles = fs.readdirSync(migrationsDir)
       .filter(file => file.endsWith('.sql'))
@@ -48,46 +43,38 @@ async function runMigrations() {
     
     let migrationsRun = 0;
     
-    // Run migrations
+    // Thực hiện migrations
     for (const file of migrationFiles) {
       if (!executedMigrations.has(file)) {
-        console.log(`Running migration: ${file}`);
+        console.log(`Đang chạy migration: ${file}`);
         
-        // Read and execute migration file
+        // Đọc và thực thi file migration
         const migrationPath = path.join(migrationsDir, file);
         const migrationSQL = fs.readFileSync(migrationPath, 'utf-8');
         
-        // Wrap in a transaction
-        const transaction = db.transaction(() => {
-          db.exec(migrationSQL);
+        // Thực hiện trong transaction
+        await db.transaction(async (tx: any) => {
+          // Thực thi SQL migration sử dụng sql trực tiếp
+          await sql`${migrationSQL}`;
           
-          // Record migration
-          db.prepare('INSERT INTO _migrations (name) VALUES (?)').run(file);
+          // Ghi nhận migration
+          await sql`INSERT INTO _migrations (name) VALUES (${file})`;
         });
         
-        try {
-          transaction();
-          console.log(`✓ Successfully applied migration: ${file}`);
-          migrationsRun++;
-        } catch (error) {
-          console.error(`❌ Error applying migration ${file}:`, error);
-          throw error;
-        }
+        console.log(`✓ Đã áp dụng thành công migration: ${file}`);
+        migrationsRun++;
       }
     }
     
     if (migrationsRun === 0) {
-      console.log('No new migrations to run.');
+      console.log('Không có migration mới nào để chạy.');
     } else {
-      console.log(`\nSuccessfully ran ${migrationsRun} migration(s).`);
+      console.log(`\nĐã chạy thành công ${migrationsRun} migration(s).`);
     }
     
   } catch (error) {
-    console.error('Migration failed:', error);
+    console.error('Migration thất bại:', error);
     process.exit(1);
-  } finally {
-    // Close the database connection
-    db.close();
   }
 }
 

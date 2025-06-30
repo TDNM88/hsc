@@ -1,29 +1,39 @@
 import { config } from '../config';
-import fs from 'fs';
-import path from 'path';
+import { db, sql } from '../lib/db';
 
 async function initDb() {
-  if (config.databaseType === 'sqlite') {
-    const dbPath = path.resolve(process.cwd(), config.sqlitePath || 'london.db');
+  try {
+    console.log('Initializing PostgreSQL database...');
     
-    // Check if database file exists, create if it doesn't
-    if (!fs.existsSync(dbPath)) {
-      console.log('Creating SQLite database file...');
-      
-      // Ensure the directory exists
-      const dir = path.dirname(dbPath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-      
-      // Create an empty file
-      fs.writeFileSync(dbPath, '');
-      console.log(`SQLite database created at ${dbPath}`);
-    } else {
-      console.log(`Using existing SQLite database at ${dbPath}`);
+    // Kiểm tra kết nối đến PostgreSQL
+    if (!config.database.url) {
+      throw new Error('DATABASE_URL không được cấu hình trong biến môi trường');
     }
-  } else {
-    console.log('Using PostgreSQL database');
+    
+    console.log('Kiểm tra kết nối đến PostgreSQL...');
+    const result = await sql`SELECT version();`;
+    console.log('Kết nối thành công đến PostgreSQL:', result[0].version);
+    
+    // Kiểm tra các bảng trong database
+    const tables = await sql`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+    `;
+    
+    console.log('Các bảng hiện có trong database:');
+    if (tables.length === 0) {
+      console.log('Không có bảng nào. Database trống.');
+    } else {
+      tables.forEach((table: any) => {
+        console.log(`- ${table.table_name}`);
+      });
+    }
+    
+    console.log('Khởi tạo database hoàn tất.');
+  } catch (error) {
+    console.error('Lỗi khi khởi tạo database:', error);
+    throw error;
   }
 }
 

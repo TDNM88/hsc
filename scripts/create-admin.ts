@@ -1,18 +1,25 @@
 import { db } from "../lib/db"
 import { users } from "../lib/schema"
 import { hashPassword } from "../lib/auth"
+import { sql } from "drizzle-orm"
 
 async function createAdmin() {
   try {
+    // Tạo dữ liệu admin với đầy đủ các trường bắt buộc theo schema
     const adminData = {
       username: "admin",
       email: "admin@londonssi.com",
-      passwordHash: await hashPassword("admin123456"),
-      name: "Administrator",
+      password: await hashPassword("admin123456"),
+      firstName: "Administrator",
+      lastName: "",
       phone: "0123456789",
-      balance: "0",
+      balance: sql`0.00`, // Sử dụng sql literal cho decimal
       role: "admin",
-      isActive: true,
+      status: "active",
+      isEmailVerified: true,
+      twoFactorEnabled: false,
+      loginAttempts: 0,
+      isLocked: false
     }
 
     const [admin] = await db.insert(users).values(adminData).returning()

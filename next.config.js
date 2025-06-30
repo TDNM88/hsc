@@ -102,10 +102,33 @@ const nextConfig = {
       },
     }
 
-    // Add aliases
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "@": require("path").resolve(__dirname),
+    // Add custom webpack config here
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+      child_process: false,
+    }
+
+    // Add support for WebAssembly
+    config.experiments = {
+      ...config.experiments,
+      asyncWebAssembly: true,
+    }
+
+    // Xử lý lỗi "self is not defined" cho @neondatabase/serverless
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@neondatabase/serverless': false,
+      }
+    } else {
+      // Thêm alias cho môi trường server
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "@": require("path").resolve(__dirname),
+      }
     }
 
     // Handle SVG files
