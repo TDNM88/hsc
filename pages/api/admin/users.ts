@@ -34,12 +34,27 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
           whereCondition = or(
             like(users.username, `%${search}%`),
             like(users.email, `%${search}%`),
-            like(users.name, `%${search}%`),
+            like(users.firstName, `%${search}%`),
+            like(users.lastName, `%${search}%`)
           )
         }
 
         if (status !== "all") {
-          const statusCondition = eq(users.isActive, status === "active")
+          let statusCondition
+          if (status === "active") {
+            statusCondition = and(
+              eq(users.status, "active"),
+              eq(users.isSuspended, false),
+              eq(users.isDeleted, false)
+            )
+          } else if (status === "suspended") {
+            statusCondition = eq(users.isSuspended, true)
+          } else if (status === "deleted") {
+            statusCondition = eq(users.isDeleted, true)
+          } else {
+            // Handle other status values if needed
+            statusCondition = eq(users.status, status as any)
+          }
           whereCondition = whereCondition ? and(whereCondition, statusCondition) : statusCondition
         }
 
@@ -50,11 +65,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
               id: users.id,
               username: users.username,
               email: users.email,
-              name: users.name,
+              firstName: users.firstName,
+              lastName: users.lastName,
               phone: users.phone,
               balance: users.balance,
               role: users.role,
-              isActive: users.isActive,
+              isSuspended: users.isSuspended,
+              isDeleted: users.isDeleted,
+              isEmailVerified: users.isEmailVerified,
               createdAt: users.createdAt,
               updatedAt: users.updatedAt,
             })
@@ -71,17 +89,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
           id: user.id,
           username: user.username,
           email: user.email,
-          name: user.name,
-          phone: user.phone,
+          name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.username,
+          phone: user.phone || '',
           balance: Number.parseFloat(user.balance),
           frozenBalance: 0,
-          ipLogin: "127.0.0.1",
-          status: user.isActive ? "Hoạt động" : "Offline",
-          verified: true,
+          role: user.role,
+          status: user.isDeleted ? 'Đã xóa' : user.isSuspended ? 'Tạm khóa' : 'Hoạt động',
+          verified: !user.isEmailVerified,
           betLocked: false,
           withdrawLocked: false,
-          role: user.role,
-          isActive: user.isActive,
           createdAt: user.createdAt,
         }))
 

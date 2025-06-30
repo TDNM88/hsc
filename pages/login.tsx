@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from "next/router"
 import Link from "next/link"
 import { useAuth } from "../lib/auth-context"
 import { Button } from "../components/ui/button"
@@ -24,10 +24,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      // Get return URL from query parameters
-      const searchParams = new URLSearchParams(window.location.search)
-      const returnUrl = searchParams.get('returnUrl')
-      router.push(returnUrl || "/trade")
+      // Get return URL from query parameters or router query
+      const returnUrl = router.query.returnUrl as string || "/trade"
+      console.log('User authenticated, redirecting to:', returnUrl)
+      router.push(returnUrl)
     }
   }, [user, router])
 

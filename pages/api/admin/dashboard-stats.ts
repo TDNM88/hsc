@@ -52,7 +52,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .select({
         id: users.id,
         username: users.username,
-        name: users.name,
+        firstName: users.firstName,
+        lastName: users.lastName,
         balance: users.balance,
         createdAt: users.createdAt,
       })

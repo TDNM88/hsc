@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/router";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,11 +20,9 @@ export default function ResetPasswordPage() {
   const [token, setToken] = useState("");
   const [tokenValid, setTokenValid] = useState<boolean | null>(null);
 
-  const searchParams = useSearchParams();
-
   // Extract token from URL query parameters
   useEffect(() => {
-    const tokenParam = searchParams?.get('token');
+    const tokenParam = router.query.token as string;
     if (tokenParam) {
       setToken(tokenParam);
       // In a real app, you might want to verify the token here
@@ -33,7 +31,7 @@ export default function ResetPasswordPage() {
       setTokenValid(false);
       setError("Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.");
     }
-  }, [searchParams]);
+  }, [router.query]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,10 +67,14 @@ export default function ResetPasswordPage() {
 
       setSuccess("Mật khẩu đã được đặt lại thành công. Bạn sẽ được chuyển hướng đến trang đăng nhập...");
       
-      // Redirect to login page after 3 seconds
-      setTimeout(() => {
+      // Redirect to login page immediately
+      try {
         router.push("/login");
-      }, 3000);
+      } catch (routerError) {
+        console.error('Router error:', routerError);
+        // Fallback to window.location if router fails
+        window.location.href = '/login';
+      }
     } catch (err) {
       console.error("Password reset error:", err);
       setError(err instanceof Error ? err.message : "Có lỗi xảy ra. Vui lòng thử lại sau.");

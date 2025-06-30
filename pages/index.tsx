@@ -3,6 +3,7 @@
 import { useRouter } from "next/router"
 import Layout from "../components/layout/Layout"
 import { Button } from "@/components/ui/button"
+import Image from "next/image"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
@@ -68,16 +69,22 @@ export default function Landing() {
           {/* Left Column - Image and News */}
           <div className="md:col-span-1">
             <div className="relative w-full h-auto">
-              <img
-                src="/slide1.jpg"
-                alt="London Stock Exchange"
-                className="w-full h-auto mb-4"
-              />
-              <img
-                src="/slide1.jpg"
-                alt="London Stock Exchange"
-                className="w-full h-auto mb-4 absolute top-0 left-0 opacity-0 transition-opacity duration-1000"
-              />
+              <div className="relative w-full h-48 md:h-64">
+                <Image
+                  src="/slide1.jpg"
+                  alt="London Stock Exchange"
+                  fill
+                  className="object-cover mb-4"
+                  priority
+                />
+                <Image
+                  src="/slide1.jpg"
+                  alt="London Stock Exchange"
+                  fill
+                  className="object-cover mb-4 absolute top-0 left-0 opacity-0 transition-opacity duration-1000"
+                  priority
+                />
+              </div>
             </div>
             <h2 className="text-lg font-bold mt-2 text-black">
               Sàn giao dịch chứng khoán London HSC chào đón Thông đốc Samuel Garcia tại Nuevo León, Mexico
@@ -166,11 +173,15 @@ export default function Landing() {
       <div className="bg-[#0b0033] py-16">
         <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div>
-            <img
-              src="/wisdomtree-banner.png"
-              alt="WisdomTree Banner"
-              className="rounded-lg shadow-lg w-full h-auto"
-            />
+            <div className="relative w-full h-48 md:h-64">
+              <Image
+                src="/wisdomtree-banner.png"
+                alt="WisdomTree Banner"
+                fill
+                className="rounded-lg shadow-lg object-cover"
+                priority
+              />
+            </div>
           </div>
           <div className="text-white space-y-4">
             <h2 className="text-3xl font-bold">
@@ -215,11 +226,15 @@ export default function Landing() {
             </div>
           </div>
           <div className="order-1 md:order-2">
-            <img
-              src="/ss.jpg"
-              alt="Skyscraper"
-              className="rounded-lg shadow-xl w-full h-auto object-cover"
-            />
+            <div className="relative w-full h-64 md:h-96">
+              <Image
+                src="/ss.jpg"
+                alt="Skyscraper"
+                fill
+                className="rounded-lg shadow-xl object-cover"
+                priority
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -227,21 +242,33 @@ export default function Landing() {
       {/* Gallery Section */}
       <div className="bg-[#eae2ff] py-16">
         <div className="container mx-auto px-4 grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <img
-            src="/gallery2.jpg"
-            alt="London Stock Exchange"
-            className="w-full h-48 object-cover rounded-lg shadow"
-          />
-          <img
-            src="/gallery3.jpg"
-            alt="Borsa Frankfurt"
-            className="w-full h-48 object-cover rounded-lg shadow"
-          />
-          <img
-            src="/gallery4.jpg"
-            alt="Trading Floor"
-            className="w-full h-48 object-cover rounded-lg shadow"
-          />
+          <div className="relative w-full h-48">
+            <Image
+              src="/gallery2.jpg"
+              alt="London Stock Exchange"
+              fill
+              className="object-cover rounded-lg shadow"
+              priority
+            />
+          </div>
+          <div className="relative w-full h-48">
+            <Image
+              src="/gallery3.jpg"
+              alt="Borsa Frankfurt"
+              fill
+              className="object-cover rounded-lg shadow"
+              priority
+            />
+          </div>
+          <div className="relative w-full h-48">
+            <Image
+              src="/gallery4.jpg"
+              alt="Trading Floor"
+              fill
+              className="object-cover rounded-lg shadow"
+              priority
+            />
+          </div>
         </div>
       </div>
 
@@ -254,7 +281,14 @@ export default function Landing() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {/* Expert 1 */}
             <div className="flex items-start space-x-4">
-              <img src="/experts/1.jpg" alt="Emmanuel Cau" className="w-16 h-16 rounded-full object-cover" />
+              <div className="relative w-16 h-16">
+                <Image
+                  src="/experts/1.jpg"
+                  alt="Emmanuel Cau"
+                  fill
+                  className="rounded-full object-cover"
+                />
+              </div>
               <div>
                 <h3 className="font-semibold">Emmanuel Cau, CFA</h3>
                 <p className="text-sm text-gray-600">Giám đốc Sở giao dịch chứng khoán châu Âu, Barclays</p>
@@ -262,7 +296,14 @@ export default function Landing() {
             </div>
             {/* Expert 2 */}
             <div className="flex items-start space-x-4">
-              <img src="/experts/2.jpg" alt="Emmanuel CAU" className="w-16 h-16 rounded-full object-cover" />
+              <div className="relative w-16 h-16">
+                <Image
+                  src="/experts/2.jpg"
+                  alt="Emmanuel CAU"
+                  fill
+                  className="rounded-full object-cover"
+                />
+              </div>
               <div>
                 <h3 className="font-semibold">Emmanuel CAU</h3>
                 <p className="text-sm text-gray-600">Chargé de Communication Marketing</p>
@@ -270,7 +311,14 @@ export default function Landing() {
             </div>
             {/* Expert 3 */}
             <div className="flex items-start space-x-4">
-              <img src="/experts/3.jpg" alt="Merav Ozair" className="w-16 h-16 rounded-full object-cover" />
+              <div className="relative w-16 h-16">
+                <Image
+                  src="/experts/3.jpg"
+                  alt="Merav Ozair"
+                  fill
+                  className="rounded-full object-cover"
+                />
+              </div>
               <div>
                 <h3 className="font-semibold">MERAV OZAIR, TIẾN SĨ</h3>
                 <p className="text-sm text-gray-600">Tương lai của tài chính: AI đáp ứng được token hóa</p>
@@ -278,7 +326,14 @@ export default function Landing() {
             </div>
             {/* Expert 4 */}
             <div className="flex items-start space-x-4">
-              <img src="/experts/4.jpg" alt="Comunidade CFA" className="w-16 h-16 rounded-full object-cover" />
+              <div className="relative w-16 h-16">
+                <Image
+                  src="/experts/4.jpg"
+                  alt="Comunidade CFA"
+                  fill
+                  className="rounded-full object-cover"
+                />
+              </div>
               <div>
                 <h3 className="font-semibold">Comunidade CFA – Eu me Banco</h3>
                 <p className="text-sm text-gray-600">Chuyên gia hoạt động như các nhà phân tích tài chính và đầu tư</p>
@@ -286,7 +341,14 @@ export default function Landing() {
             </div>
             {/* Expert 5 */}
             <div className="flex items-start space-x-4">
-              <img src="/experts/5.jpg" alt="Richard" className="w-16 h-16 rounded-full object-cover" />
+              <div className="relative w-16 h-16">
+                <Image
+                  src="/experts/5.jpg"
+                  alt="Richard"
+                  fill
+                  className="rounded-full object-cover"
+                />
+              </div>
               <div>
                 <h3 className="font-semibold">RICHARD SAINTVILUS</h3>
                 <p className="text-sm text-gray-600">AI sáng tạo xông vào điện toán đám mây</p>
@@ -294,7 +356,14 @@ export default function Landing() {
             </div>
             {/* Expert 6 */}
             <div className="flex items-start space-x-4">
-              <img src="/experts/6.jpg" alt="Richard Tesla" className="w-16 h-16 rounded-full object-cover" />
+              <div className="relative w-16 h-16">
+                <Image
+                  src="/experts/6.jpg"
+                  alt="Richard Tesla"
+                  fill
+                  className="rounded-full object-cover"
+                />
+              </div>
               <div>
                 <h3 className="font-semibold">RICHARD TESLA</h3>
                 <p className="text-sm text-gray-600">Tại sao ĐÃ đến lúc Mua Cổ phiếu Tesla</p>

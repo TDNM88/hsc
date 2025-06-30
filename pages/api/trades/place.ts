@@ -54,9 +54,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
       // Create trade record
       await tx.insert(trades).values({
         userId,
-        roundId,
+        sessionId: 1, // Cần thay thế bằng sessionId thực tế hoặc tạo session mới
+        symbol: "BTC/USD", // Cần thay thế bằng symbol thực tế
         direction: direction.toLowerCase(),
         amount: amount.toString(),
+        entryPrice: "0", // Cần thay thế bằng giá thực tế
+        expiryTime: new Date(Date.now() + 60 * 1000), // Hết hạn sau 1 phút
         profit: "0",
         status: "pending",
       })

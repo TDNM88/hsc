@@ -107,16 +107,15 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     // Hash the new password with increased salt rounds
     const saltRounds = 12
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds)
-    const now = new Date().toISOString()
+    const now = new Date()
 
     // Update the user's password and reset any password reset tokens
     await db
       .update(schema.users)
       .set({ 
         password: hashedPassword,
-        passwordChangedAt: now,
-        passwordResetToken: null,
-        passwordResetExpires: null,
+        resetPasswordToken: null,
+        resetPasswordExpires: null,
         updatedAt: now
       })
       .where(eq(schema.users.id, user.id))

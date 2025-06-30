@@ -61,7 +61,7 @@ async function settleRound(roundId: number) {
       .set({ closePrice: closePrice.toString(), status: "SETTLED", settledAt: new Date() })
       .where(eq(rounds.id, roundId));
 
-    const roundTrades = await tx.select().from(trades).where(eq(trades.roundId, roundId));
+    const roundTrades = await tx.select().from(trades).where(eq(trades.sessionId, roundId));
 
     for (const trade of roundTrades) {
       const entryPrice = parseFloat(trade.entryPrice);

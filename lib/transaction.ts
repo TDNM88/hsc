@@ -1,5 +1,9 @@
 import { db } from './db';
-import { transactions, users, type Transaction, type NewTransaction } from './schema';
+import { transactions, users } from './schema';
+import type { InferModel } from 'drizzle-orm';
+
+type Transaction = InferModel<typeof transactions>;
+type NewTransaction = InferModel<typeof transactions, 'insert'>;
 import { eq, sql } from 'drizzle-orm';
 
 export async function createTransaction(transactionData: Omit<NewTransaction, 'id' | 'createdAt' | 'updatedAt'>): Promise<Transaction | null> {

@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,11 +33,53 @@ const ChangePassword = () => {
     }
   });
 
-  const onSubmit = (values: FormValues) => {
-    toast({
-      title: 'Thành công',
-      description: 'Đổi mật khẩu thành công!',
-    });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const onSubmit = async (values: FormValues) => {
+    try {
+      setIsSubmitting(true);
+      
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentPassword: values.password,
+          newPassword: values.newPassword,
+          confirmPassword: values.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.field) {
+          form.setError(data.field === 'currentPassword' ? 'password' : data.field, {
+            type: 'manual',
+            message: data.error || 'Lỗi xác thực',
+          });
+        }
+        throw new Error(data.error || 'Đổi mật khẩu thất bại');
+      }
+
+      // Reset form
+      form.reset();
+      
+      toast({
+        title: 'Thành công',
+        description: data.message || 'Đổi mật khẩu thành công!',
+      });
+    } catch (error) {
+      console.error('Change password error:', error);
+      toast({
+        title: 'Lỗi',
+        description: error instanceof Error ? error.message : 'Đổi mật khẩu thất bại. Vui lòng thử lại sau.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -129,8 +171,12 @@ const ChangePassword = () => {
                         )}
                       />
 
-                      <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
-                        Xác nhận
+                      <Button 
+                        type="submit" 
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? 'Đang xử lý...' : 'Xác nhận'}
                       </Button>
                     </form>
                   </Form>

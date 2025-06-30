@@ -1,5 +1,9 @@
 import { db } from './db';
-import { trades, users, type Trade, type NewTrade } from './schema';
+import { trades, users } from './schema';
+import type { InferModel } from 'drizzle-orm';
+
+type Trade = InferModel<typeof trades>;
+type NewTrade = InferModel<typeof trades, 'insert'>;
 import { eq, and, gte, lte, desc, sql } from 'drizzle-orm';
 
 export async function placeTrade(
@@ -138,7 +142,7 @@ export async function getUserTrades(
       .select()
       .from(trades)
       .where(eq(trades.userId, userId))
-      .orderBy(desc(trades.openTime))
+      .orderBy(desc(trades.placedAt))
       .limit(limit)
       .offset(offset);
 
@@ -163,7 +167,7 @@ export async function getActiveTrades(userId: number): Promise<Trade[]> {
           eq(trades.status, 'PENDING')
         )
       )
-      .orderBy(desc(trades.openTime));
+      .orderBy(desc(trades.placedAt));
   } catch (error) {
     console.error('Error fetching active trades:', error);
     return [];

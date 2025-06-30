@@ -40,13 +40,18 @@ const NewHeader = () => {
             {/* Left side - Logo and Menu */}
             <div className="flex items-center space-x-7">
               <div className="flex-shrink-0">
-                <Image 
-                  src="/logo.png" 
-                  alt="London HSC" 
-                  width={150} 
-                  height={150} 
-                  className="mix-blend-multiply"
-                />
+                <div className="relative w-[150px] h-[40px]">
+                  <div className="relative w-full h-full">
+                    <Image
+                      src="/logo.png"
+                      alt="London HSC"
+                      fill
+                      className="mix-blend-multiply object-contain"
+                      priority={true}
+                      sizes="(max-width: 150px) 100vw, 150px"
+                    />
+                  </div>
+                </div>
               </div>
               
               <nav className="hidden md:flex items-center space-x-3">

@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .select({
         id: trades.id,
         username: users.username,
-        roundId: trades.roundId,
+        sessionId: trades.sessionId,
         direction: trades.direction,
         amount: trades.amount,
         profit: trades.profit,
