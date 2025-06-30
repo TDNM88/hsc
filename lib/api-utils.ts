@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next"
-import { getUserFromToken } from "./auth"
+import { validateSession } from "./auth"
 import { rateLimit } from "./rate-limit"
 
 export interface AuthenticatedRequest extends NextApiRequest {
@@ -21,7 +21,7 @@ export function requireAuth(handler: (req: AuthenticatedRequest, res: NextApiRes
         return res.status(401).json({ error: "No token provided" })
       }
 
-      const user = await getUserFromToken(token)
+      const user = await validateSession(token)
       if (!user) {
         return res.status(401).json({ error: "Invalid token" })
       }

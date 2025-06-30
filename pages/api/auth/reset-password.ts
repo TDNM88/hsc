@@ -81,8 +81,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 // Apply rate limiting
-export default withRateLimit(
-  handler,
-  "auth-reset-password",
-  "Quá nhiều yêu cầu. Vui lòng thử lại sau."
-);
+export default function rateLimitedHandler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  return withRateLimit(
+    req,
+    res,
+    () => handler(req, res),
+    "auth-reset-password",
+    "Quá nhiều yêu cầu. Vui lòng thử lại sau."
+  );
+}

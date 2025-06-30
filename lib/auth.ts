@@ -22,6 +22,7 @@ export interface User {
   isEmailVerified: boolean
   kycStatus: string
   twoFactorEnabled: boolean
+  isLockWithdraw?: boolean
   referralCode?: string
   avatar?: string
   preferences: any
