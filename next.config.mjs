@@ -38,8 +38,24 @@ const nextConfig = {
     ];
   },
   // Note: onError should be handled in your API routes or middleware, not in next.config.mjs
-  webpack: (config, { isServer, dev }) => {
-    // Fixes npm packages that depend on `fs` module
+  webpack: async (config, { isServer, dev }) => {
+    // Fix for "self is not defined" error
+    if (isServer) {
+      // Add Node.js polyfills for server-side code
+      const originalEntry = config.entry;
+      config.entry = async () => {
+        const entries = await originalEntry();
+        
+        // Add polyfill for 'self'
+        if (entries['main.js'] && !entries['main.js'].includes('./lib/polyfills.js')) {
+          entries['main.js'].unshift('./lib/polyfills.js');
+        }
+        
+        return entries;
+      };
+    }
+    
+    // Client-side fallbacks
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,

@@ -94,25 +94,20 @@ const nextConfig = {
   },
 
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Provide polyfills for browser globals when running on the server
+    // Fix for "self is not defined" error
     if (isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false
+      // Add Node.js polyfills for server-side code
+      const originalEntry = config.entry;
+      config.entry = async () => {
+        const entries = await originalEntry();
+        
+        // Add polyfill for 'self'
+        if (entries['main.js'] && !entries['main.js'].includes('./lib/polyfills.js')) {
+          entries['main.js'].unshift('./lib/polyfills.js');
+        }
+        
+        return entries;
       };
-      
-      // Define global objects that might be referenced in vendor code
-      config.plugins.push(
-        new webpack.DefinePlugin({
-          'self': 'globalThis',
-          'window': 'globalThis',
-          'document': 'undefined',
-          'navigator': 'undefined',
-          'localStorage': 'undefined'
-        })
-      );
     }
     
     // Optimize bundle size
