@@ -1,0 +1,146 @@
+[2025-06-26T09:47:48.957Z] [REGISTER-ERROR] Validation failed
+Error: [
+  {
+    "code": "too_small",
+    "minimum": 8,
+    "type": "string",
+    "inclusive": true,
+    "exact": false,
+    "message": "Mật khẩu phải có ít nhất 8 ký tự",
+    "path": [
+      "password"
+    ]
+  }
+]
+Stack: ZodError: [
+  {
+    "code": "too_small",
+    "minimum": 8,
+    "type": "string",
+    "inclusive": true,
+    "exact": false,
+    "message": "Mật khẩu phải có ít nhất 8 ký tự",
+    "path": [
+      "password"
+    ]
+  }
+]
+    at get error (file:///C:/Users/trung/Downloads/london/node_modules/zod/dist/esm/v3/types.js:39:31)
+    at handler (webpack-internal:///(api)/./pages/api/auth/register.ts:80:50)
+    at eval (webpack-internal:///(api)/./pages/api/auth/register.ts:265:104)
+    at withRateLimit (webpack-internal:///(api)/./lib/api-utils.ts:37:15)
+    at async rateLimitedHandler (webpack-internal:///(api)/./pages/api/auth/register.ts:265:16)
+    at async K (C:\Users\trung\Downloads\london\node_modules\next\dist\compiled\next-server\pages-api.runtime.dev.js:21:2871)
+    at async U.render (C:\Users\trung\Downloads\london\node_modules\next\dist\compiled\next-server\pages-api.runtime.dev.js:21:3955)
+    at async DevServer.runApi (C:\Users\trung\Downloads\london\node_modules\next\dist\server\next-server.js:603:9)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\next-server.js:269:37)
+    at async DevServer.handleRequestImpl (C:\Users\trung\Downloads\london\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\Users\trung\Downloads\london\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\Users\trung\Downloads\london\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\router-server.js:359:24)
+
+[2025-06-26T09:50:30.857Z] [REGISTER-ERROR] Database insertion failed
+Error: SQLite3 can only bind numbers, strings, bigints, buffers, and null
+Stack: TypeError: SQLite3 can only bind numbers, strings, bigints, buffers, and null
+    at PreparedQuery.values (webpack-internal:///(api)/./node_modules/drizzle-orm/better-sqlite3/session.js:111:32)
+    at PreparedQuery.all (webpack-internal:///(api)/./node_modules/drizzle-orm/better-sqlite3/session.js:84:27)
+    at SQLiteInsertBase.all (webpack-internal:///(api)/./node_modules/drizzle-orm/sqlite-core/query-builders/insert.js:65:36)
+    at QueryPromise.execute (webpack-internal:///(api)/./node_modules/drizzle-orm/sqlite-core/query-builders/insert.js:183:45)
+    at QueryPromise.then (webpack-internal:///(api)/./node_modules/drizzle-orm/query-promise.js:28:21)
+
+[2025-06-26T09:50:30.861Z] [REGISTER-ERROR] Registration process failed
+Error: Database operation failed: SQLite3 can only bind numbers, strings, bigints, buffers, and null
+Stack: Error: Database operation failed: SQLite3 can only bind numbers, strings, bigints, buffers, and null
+    at handler (webpack-internal:///(api)/./pages/api/auth/register.ts:194:19)
+    at async withRateLimit (webpack-internal:///(api)/./lib/api-utils.ts:37:9)
+    at async rateLimitedHandler (webpack-internal:///(api)/./pages/api/auth/register.ts:279:16)
+    at async K (C:\Users\trung\Downloads\london\node_modules\next\dist\compiled\next-server\pages-api.runtime.dev.js:21:2871)
+    at async U.render (C:\Users\trung\Downloads\london\node_modules\next\dist\compiled\next-server\pages-api.runtime.dev.js:21:3955)
+    at async DevServer.runApi (C:\Users\trung\Downloads\london\node_modules\next\dist\server\next-server.js:603:9)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\next-server.js:269:37)
+    at async DevServer.handleRequestImpl (C:\Users\trung\Downloads\london\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\Users\trung\Downloads\london\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\Users\trung\Downloads\london\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\start-server.js:141:13)
+
+[2025-06-26T09:53:47.885Z] [REGISTER-ERROR] Database insertion failed
+Error: _lib_db__WEBPACK_IMPORTED_MODULE_0__.db.execute is not a function
+Stack: TypeError: _lib_db__WEBPACK_IMPORTED_MODULE_0__.db.execute is not a function
+    at handler (webpack-internal:///(api)/./pages/api/auth/register.ts:183:74)
+    at async withRateLimit (webpack-internal:///(api)/./lib/api-utils.ts:37:9)
+    at async rateLimitedHandler (webpack-internal:///(api)/./pages/api/auth/register.ts:293:16)
+    at async K (C:\Users\trung\Downloads\london\node_modules\next\dist\compiled\next-server\pages-api.runtime.dev.js:21:2871)
+    at async U.render (C:\Users\trung\Downloads\london\node_modules\next\dist\compiled\next-server\pages-api.runtime.dev.js:21:3955)
+    at async DevServer.runApi (C:\Users\trung\Downloads\london\node_modules\next\dist\server\next-server.js:603:9)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\next-server.js:269:37)
+    at async DevServer.handleRequestImpl (C:\Users\trung\Downloads\london\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\Users\trung\Downloads\london\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\Users\trung\Downloads\london\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\start-server.js:141:13)
+
+[2025-06-26T09:53:47.889Z] [REGISTER-ERROR] Registration process failed
+Error: Database operation failed: _lib_db__WEBPACK_IMPORTED_MODULE_0__.db.execute is not a function
+Stack: Error: Database operation failed: _lib_db__WEBPACK_IMPORTED_MODULE_0__.db.execute is not a function
+    at handler (webpack-internal:///(api)/./pages/api/auth/register.ts:208:19)
+    at async withRateLimit (webpack-internal:///(api)/./lib/api-utils.ts:37:9)
+    at async rateLimitedHandler (webpack-internal:///(api)/./pages/api/auth/register.ts:293:16)
+    at async K (C:\Users\trung\Downloads\london\node_modules\next\dist\compiled\next-server\pages-api.runtime.dev.js:21:2871)
+    at async U.render (C:\Users\trung\Downloads\london\node_modules\next\dist\compiled\next-server\pages-api.runtime.dev.js:21:3955)
+    at async DevServer.runApi (C:\Users\trung\Downloads\london\node_modules\next\dist\server\next-server.js:603:9)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\next-server.js:269:37)
+    at async DevServer.handleRequestImpl (C:\Users\trung\Downloads\london\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\Users\trung\Downloads\london\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\Users\trung\Downloads\london\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\start-server.js:141:13)
+
+[2025-06-26T09:56:09.467Z] [REGISTER-ERROR] Database insertion failed
+Error: _lib_db__WEBPACK_IMPORTED_MODULE_0__.db.execute is not a function
+Stack: TypeError: _lib_db__WEBPACK_IMPORTED_MODULE_0__.db.execute is not a function
+    at handler (webpack-internal:///(api)/./pages/api/auth/register.ts:183:74)
+    at async withRateLimit (webpack-internal:///(api)/./lib/api-utils.ts:37:9)
+    at async rateLimitedHandler (webpack-internal:///(api)/./pages/api/auth/register.ts:293:16)
+    at async K (C:\Users\trung\Downloads\london\node_modules\next\dist\compiled\next-server\pages-api.runtime.dev.js:21:2871)
+    at async U.render (C:\Users\trung\Downloads\london\node_modules\next\dist\compiled\next-server\pages-api.runtime.dev.js:21:3955)
+    at async DevServer.runApi (C:\Users\trung\Downloads\london\node_modules\next\dist\server\next-server.js:603:9)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\next-server.js:269:37)
+    at async DevServer.handleRequestImpl (C:\Users\trung\Downloads\london\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\Users\trung\Downloads\london\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\Users\trung\Downloads\london\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\start-server.js:141:13)
+
+[2025-06-26T09:56:09.478Z] [REGISTER-ERROR] Registration process failed
+Error: Database operation failed: _lib_db__WEBPACK_IMPORTED_MODULE_0__.db.execute is not a function
+Stack: Error: Database operation failed: _lib_db__WEBPACK_IMPORTED_MODULE_0__.db.execute is not a function
+    at handler (webpack-internal:///(api)/./pages/api/auth/register.ts:208:19)
+    at async withRateLimit (webpack-internal:///(api)/./lib/api-utils.ts:37:9)
+    at async rateLimitedHandler (webpack-internal:///(api)/./pages/api/auth/register.ts:293:16)
+    at async K (C:\Users\trung\Downloads\london\node_modules\next\dist\compiled\next-server\pages-api.runtime.dev.js:21:2871)
+    at async U.render (C:\Users\trung\Downloads\london\node_modules\next\dist\compiled\next-server\pages-api.runtime.dev.js:21:3955)
+    at async DevServer.runApi (C:\Users\trung\Downloads\london\node_modules\next\dist\server\next-server.js:603:9)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\next-server.js:269:37)
+    at async DevServer.handleRequestImpl (C:\Users\trung\Downloads\london\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\Users\trung\Downloads\london\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\Users\trung\Downloads\london\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\Users\trung\Downloads\london\node_modules\next\dist\server\lib\start-server.js:141:13)
