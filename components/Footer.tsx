@@ -38,7 +38,7 @@ export default function Footer() {
     { name: 'Facebook', href: '#', icon: Facebook },
     { name: 'LinkedIn', href: '#', icon: Linkedin },
     { name: 'X', href: '#', icon: X },
-    { name: 'Mail', href: 'mailto:support@londonssi.com', icon: Mail },
+    { name: 'Mail', href: 'mailto:support@londonHSC.com', icon: Mail },
   ];
 
   return (
@@ -116,7 +116,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <p className="mt-10 text-center text-xs leading-5 text-gray-400">
-          Bản quyền {currentYear} SSI INC. Mọi quyền được bảo lưu.
+          Bản quyền {currentYear} HSCINC. Mọi quyền được bảo lưu.
         </p>
       </div>
     </footer>

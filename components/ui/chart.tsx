@@ -102,21 +102,26 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip
 
-const ChartTooltipContent = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
-    React.ComponentProps<"div"> & {
-      hideLabel?: boolean
-      hideIndicator?: boolean
-      indicator?: "line" | "dot" | "dashed"
-      nameKey?: string
-      labelKey?: string
-    }
->(
+interface ChartTooltipContentProps extends React.ComponentProps<"div"> {
+  active?: boolean
+  payload?: any[]
+  label?: string | number | Date
+  labelFormatter?: (label: string | number | Date) => React.ReactNode
+  formatter?: (value: any, name: string, item: any, index: number, payload: any) => React.ReactNode
+  hideLabel?: boolean
+  hideIndicator?: boolean
+  indicator?: "line" | "dot" | "dashed"
+  nameKey?: string
+  labelKey?: string
+  labelClassName?: string
+  className?: string
+}
+
+const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContentProps>(
   (
     {
       active,
-      payload,
+      payload = [],
       className,
       indicator = "dot",
       hideLabel = false,
@@ -124,7 +129,7 @@ const ChartTooltipContent = React.forwardRef<
       label,
       labelFormatter,
       labelClassName,
-      formatter,
+      formatter = (value: any) => value,
       color,
       nameKey,
       labelKey,
@@ -134,7 +139,7 @@ const ChartTooltipContent = React.forwardRef<
     const { config } = useChart()
 
     const tooltipLabel = React.useMemo(() => {
-      if (hideLabel || !payload?.length) {
+      if (hideLabel || !payload?.length || !label) {
         return null
       }
 
@@ -146,12 +151,16 @@ const ChartTooltipContent = React.forwardRef<
           ? config[label as keyof typeof config]?.label || label
           : itemConfig?.label
 
-      if (labelFormatter) {
-        return (
-          <div className={cn("font-medium", labelClassName)}>
-            {labelFormatter(value, payload)}
-          </div>
-        )
+      if (labelFormatter && value) {
+        // Convert bigint to string if needed
+        const formattedValue = typeof value === 'bigint' ? value.toString() : value;
+        if (typeof formattedValue === 'string' || typeof formattedValue === 'number' || formattedValue instanceof Date) {
+          return (
+            <div className={cn("font-medium", labelClassName)}>
+              {labelFormatter(formattedValue)}
+            </div>
+          )
+        }
       }
 
       if (!value) {
@@ -198,7 +207,7 @@ const ChartTooltipContent = React.forwardRef<
                   indicator === "dot" && "items-center"
                 )}
               >
-                {formatter && item?.value !== undefined && item.name ? (
+                {item?.value !== undefined && item.name ? (
                   formatter(item.value, item.name, item, index, item.payload)
                 ) : (
                   <>
@@ -258,16 +267,24 @@ ChartTooltipContent.displayName = "ChartTooltip"
 
 const ChartLegend = RechartsPrimitive.Legend
 
-const ChartLegendContent = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div"> &
-    Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
-      hideIcon?: boolean
-      nameKey?: string
-    }
->(
+interface ChartLegendContentProps extends React.ComponentProps<"div"> {
+  payload?: Array<{
+    value: any
+    id: string
+    type?: string
+    color?: string
+    [key: string]: any
+  }>
+  verticalAlign?: 'top' | 'middle' | 'bottom'
+  hideIcon?: boolean
+  indicator?: "line" | "dot" | "dashed"
+  nameKey?: string
+  onLegendClick?: (data: any, index: number) => void
+}
+
+const ChartLegendContent = React.forwardRef<HTMLDivElement, ChartLegendContentProps>(
   (
-    { className, hideIcon = false, payload, verticalAlign = "bottom", nameKey },
+    { className, hideIcon = false, payload, verticalAlign = "bottom", nameKey, onLegendClick },
     ref
   ) => {
     const { config } = useChart()
@@ -293,8 +310,10 @@ const ChartLegendContent = React.forwardRef<
             <div
               key={item.value}
               className={cn(
-                "flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground"
+                "flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground",
+                onLegendClick && "cursor-pointer"
               )}
+              onClick={() => onLegendClick && onLegendClick(item, payload.indexOf(item))}
             >
               {itemConfig?.icon && !hideIcon ? (
                 <itemConfig.icon />

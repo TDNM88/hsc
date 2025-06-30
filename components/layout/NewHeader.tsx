@@ -42,7 +42,7 @@ const NewHeader = () => {
               <div className="flex-shrink-0">
                 <Image 
                   src="/logo.png" 
-                  alt="London SSI" 
+                  alt="London HSC" 
                   width={150} 
                   height={150} 
                   className="mix-blend-multiply"
@@ -75,14 +75,20 @@ const NewHeader = () => {
             <div className="hidden md:flex items-center space-x-4">
               <button 
                 className="bg-blue-600 text-white px-4 py-2 font-medium hover:bg-blue-700 transition-colors"
-                onClick={handleLogin}
+                onClick={() => {
+                  handleLogin();
+                  setIsMenuOpen(false);
+                }}
               >
                 Đăng nhập
               </button>
               <div className="h-6 w-px bg-blue-600"></div>
               <button 
                 className="bg-blue-600 text-white px-4 py-2 font-medium hover:bg-blue-700 transition-colors"
-                onClick={handleRegister}
+                onClick={() => {
+                  handleRegister();
+                  setIsMenuOpen(false);
+                }}
               >
                 Mở tài khoản
               </button>

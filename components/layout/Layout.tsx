@@ -14,12 +14,12 @@ interface LayoutProps {
   title?: string
 }
 
-export default function Layout({ children, title = "London SSI" }: LayoutProps) {
+export default function Layout({ children, title = "London HSC" }: LayoutProps) {
   return (
     <>
       <Head>
         <title>{title}</title>
-        <meta name="description" content="London SSI Trading Platform" />
+        <meta name="description" content="London HSCTrading Platform" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
