@@ -14,6 +14,7 @@ export interface User {
   name?: string
   phone?: string
   isActive?: boolean
+  isLockWithdraw?: boolean
   minimumBet?: number
   minimumDeposit?: number
   minimumWithdraw?: number

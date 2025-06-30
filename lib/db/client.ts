@@ -7,7 +7,9 @@ let db: any;
 let dbPool: any;
 
 async function initializeDatabase() {
-  const dbType = config.databaseType as DatabaseType;
+  // Determine database type from the DATABASE_URL
+  const dbUrl = process.env.DATABASE_URL || '';
+  const dbType: DatabaseType = dbUrl.startsWith('postgres') ? 'postgres' : 'sqlite';
 
   if (dbType === 'postgres') {
     // PostgreSQL configuration
@@ -15,15 +17,15 @@ async function initializeDatabase() {
     const { drizzle } = await import('drizzle-orm/node-postgres');
     
     const client = new Client({
-      connectionString: config.databaseUrl,
-      ssl: config.nodeEnv === 'production' ? { rejectUnauthorized: false } : undefined,
+      connectionString: config.database.url,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
     });
     
     await client.connect();
     
     db = drizzle(client, { 
       schema,
-      logger: config.nodeEnv === 'development',
+      logger: process.env.NODE_ENV === 'development',
     });
     
     dbPool = client;
@@ -32,13 +34,13 @@ async function initializeDatabase() {
     const Database = (await import('better-sqlite3')).default;
     const { drizzle } = await import('drizzle-orm/better-sqlite3');
     
-    const sqlite = new Database(config.sqlitePath || 'london.db');
+    const sqlite = new Database(process.env.SQLITE_PATH || './sqlite.db');
     sqlite.pragma('journal_mode = WAL');
     sqlite.pragma('foreign_keys = ON');
     
     db = drizzle(sqlite, { 
       schema,
-      logger: config.nodeEnv === 'development',
+      logger: process.env.NODE_ENV === 'development',
     });
     
     dbPool = sqlite;
