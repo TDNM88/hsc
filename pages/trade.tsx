@@ -5,6 +5,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { Loader2, ArrowUp, ArrowDown, BarChart2, ChevronDown, Plus, Minus } from "lucide-react"
 import { useRouter } from "next/router"
 import useSWR from "swr"
+import withAuth, { AuthLevel } from "@/components/auth/withAuth"
 import Layout from "../components/layout/Layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -151,11 +152,7 @@ const Trade = () => {
     return () => clearInterval(intervalId)
   }, [toast])
 
-  useEffect(() => {
-    if (!user) {
-      router.push(`/login?callbackUrl=${encodeURIComponent("/trade")}`)
-    }
-  }, [user, router])
+  // Xác thực được xử lý bởi HOC withAuth
 
   const handleAction = async (direction: "up" | "down") => {
     const betAmount = Number(amount.replace(/,/g, ""))
@@ -574,4 +571,4 @@ const Trade = () => {
   )
 }
 
-export default Trade
+export default withAuth(Trade, AuthLevel.User)

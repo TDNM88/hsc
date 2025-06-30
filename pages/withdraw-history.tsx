@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
+import withAuth, { AuthLevel } from '@/components/auth/withAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -38,18 +39,7 @@ const WithdrawHistory = () => {
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-  
-  if (!user) {
-    router.push('/login'); // Redirect to login if not authenticated
-    return null;
-  }
+  // Xác thực được xử lý bởi HOC withAuth
 
   // Mock data - replace with API call
   const dataSource: WithdrawTransaction[] = [
@@ -114,7 +104,7 @@ const WithdrawHistory = () => {
                 <CardTitle className="text-white">Ví của tôi</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-lg">Số dư: <span className="font-bold">{formatCurrency(user.balance)}</span></p>
+                <p className="text-lg">Số dư: <span className="font-bold">{user ? formatCurrency(user.balance) : '0'}</span></p>
               </CardContent>
             </Card>
 
@@ -212,4 +202,4 @@ const WithdrawHistory = () => {
   );
 };
 
-export default WithdrawHistory;
+export default withAuth(WithdrawHistory, AuthLevel.User);

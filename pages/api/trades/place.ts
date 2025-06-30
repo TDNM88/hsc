@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { requireAuth, withRateLimit } from "@/lib/api-utils"
 import { db } from "@/lib/db"
-import { trades, users } from "@/lib/schema"
+import { trades, users, tradingSessions } from "@/lib/schema"
 import { eq, sql } from "drizzle-orm"
 
 async function handler(req: NextApiRequest, res: NextApiResponse, session: any) {
@@ -27,11 +27,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
 
     const userId = session.user.id
 
-    // Get current round
-    const ROUND_MS = 60_000
+    // Tính toán thời gian hết hạn
+    const EXPIRY_MS = 60_000 // 1 phút
     const now = Date.now()
-    const start = Math.floor(now / ROUND_MS) * ROUND_MS
-    const roundId = Math.floor(start / 1000).toString()
 
     // Check if user has sufficient balance
     const [user] = await db.select({ balance: users.balance }).from(users).where(eq(users.id, userId)).limit(1)
@@ -40,6 +38,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
       return res.status(400).json({ error: "Insufficient balance" })
     }
 
+    // Lấy giá hiện tại (trong thực tế, bạn sẽ lấy từ API thị trường)
+    const currentPrice = 1900.50; // Giả định giá hiện tại
+    const expiryTime = new Date(Date.now() + 60 * 1000); // Hết hạn sau 1 phút
+    
     // Create trade in transaction
     await db.transaction(async (tx) => {
       // Deduct amount from user balance
@@ -51,15 +53,29 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
         })
         .where(eq(users.id, userId))
 
+      // Tạo hoặc cập nhật phiên giao dịch
+      const [session] = await tx
+        .insert(tradingSessions)
+        .values({
+          userId,
+          symbol,
+          amount: amount.toString(),
+          direction: direction.toLowerCase(),
+          status: "active",
+          totalTrades: 1,
+          totalVolume: amount.toString(),
+        })
+        .returning({ id: tradingSessions.id });
+
       // Create trade record
       await tx.insert(trades).values({
         userId,
-        sessionId: 1, // Cần thay thế bằng sessionId thực tế hoặc tạo session mới
-        symbol: "BTC/USD", // Cần thay thế bằng symbol thực tế
+        sessionId: session.id,
+        symbol,
         direction: direction.toLowerCase(),
         amount: amount.toString(),
-        entryPrice: "0", // Cần thay thế bằng giá thực tế
-        expiryTime: new Date(Date.now() + 60 * 1000), // Hết hạn sau 1 phút
+        entryPrice: currentPrice.toString(),
+        expiryTime,
         profit: "0",
         status: "pending",
       })
@@ -67,7 +83,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
 
     return res.status(201).json({
       message: "Trade placed successfully",
-      roundId,
+      success: true
     })
   } catch (error) {
     console.error("Trade placement error:", error)

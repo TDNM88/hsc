@@ -49,6 +49,8 @@ const NewHeader = () => {
                       className="mix-blend-multiply object-contain"
                       priority={true}
                       sizes="(max-width: 150px) 100vw, 150px"
+                      width={150}
+                      height={120}
                     />
                   </div>
                 </div>

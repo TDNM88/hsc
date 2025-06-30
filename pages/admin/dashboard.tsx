@@ -3,6 +3,7 @@
 import type { GetServerSideProps } from "next"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
+import withAuth, { AuthLevel } from "@/components/auth/withAuth"
 import { format } from "date-fns"
 import { AdminDashboard } from "@/components/admin-dashboard"
 import { useAuth } from "@/lib/auth-context"
@@ -39,7 +40,7 @@ const menuItems = [
   { id: "settings", label: "Cài đặt", icon: <Settings size={20} /> },
 ]
 
-export default function AdminDashboardPage() {
+const AdminDashboardPage = () => {
   const { user } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -49,23 +50,10 @@ export default function AdminDashboardPage() {
   const { toast } = useToast()
 
   useEffect(() => {
-    if (user === null) {
-      // Still loading
-      return
+    if (user) {
+      setLoading(false)
     }
-
-    if (!user) {
-      router.push("/login?callbackUrl=" + encodeURIComponent("/admin/dashboard"))
-      return
-    }
-
-    if (user.role !== "admin") {
-      router.push("/trade")
-      return
-    }
-
-    setLoading(false)
-  }, [user, router])
+  }, [user])
 
   const formatDateForInput = (date: Date | string): string => {
     const d = new Date(date)
@@ -727,3 +715,5 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     props: {},
   }
 }
+
+export default withAuth(AdminDashboardPage, AuthLevel.Admin)

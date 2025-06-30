@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { requireAuth, withRateLimit } from "@/lib/api-utils"
 import { db } from "@/lib/db"
-import { transactions } from "@/lib/schema"
+import { transactions, users } from "@/lib/schema"
+import { eq } from "drizzle-orm"
 
 async function handler(req: NextApiRequest, res: NextApiResponse, session: any) {
   if (req.method !== "POST") {
@@ -21,6 +22,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
 
     const userId = session.user.id
 
+    // Get current user balance
+    const [user] = await db
+      .select({ balance: users.balance })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1)
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" })
+    }
+
+    const currentBalance = Number.parseFloat(user.balance)
+    const newBalance = currentBalance + Number(amount)
+
     // Create deposit transaction
     const [transaction] = await db
       .insert(transactions)
@@ -30,6 +45,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
         amount: amount.toString(),
         status: "pending",
         description: `Deposit via ${method}`,
+        balanceBefore: currentBalance.toString(),
+        balanceAfter: newBalance.toString(),
+        currency: "VND", // Thêm trường currency theo schema
       })
       .returning()
 
