@@ -2,7 +2,10 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import { requireAuth, withRateLimit } from "@/lib/api-utils"
 import { db } from "@/lib/db"
 import { trades } from "@/lib/schema"
-import { eq, and } from "drizzle-orm"
+import { eq, and, InferModel } from "drizzle-orm"
+
+// Định nghĩa kiểu dữ liệu Trade từ schema
+type Trade = InferModel<typeof trades>
 
 async function handler(req: NextApiRequest, res: NextApiResponse, session: any) {
   if (req.method !== "GET") {
@@ -28,7 +31,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
       .where(and(eq(trades.userId, userId), eq(trades.status, "pending")))
 
     return res.status(200).json({
-      trades: activeTrades.map((trade) => ({
+      trades: activeTrades.map((trade: Trade) => ({
         id: trade.id,
         sessionId: trade.sessionId,
         direction: trade.direction,

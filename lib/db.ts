@@ -1,13 +1,53 @@
-import { neon } from "@neondatabase/serverless"
-import { drizzle } from "drizzle-orm/neon-http"
-import { config } from "../config"
-import * as schema from "./schema"
+import { getNeonClient, getDrizzleClient } from './neon-client';
 
-// Create Neon serverless SQL client
-export const sql = neon(config.database.url)
+// Tạo proxy cho SQL client để tránh lỗi "self is not defined"
+export const sql = new Proxy({} as any, {
+  get: (target, prop) => {
+    // Nếu là template literal tag function
+    if (prop === 'then' || prop === Symbol.toPrimitive || prop === Symbol.toStringTag) {
+      return undefined;
+    }
+    
+    if (typeof prop === 'symbol') {
+      return undefined;
+    }
+    
+    // Xử lý template literal tag function
+    if (prop === 'call' || prop === 'apply') {
+      return async function(thisArg: any, args: any[]) {
+        const neonClient = await getNeonClient();
+        return neonClient(...args);
+      };
+    }
+    
+    return async (...args: any[]) => {
+      const neonClient = await getNeonClient();
+      return neonClient[prop](...args);
+    };
+  },
+  apply: async (target, thisArg, args) => {
+    const neonClient = await getNeonClient();
+    return neonClient(...args);
+  }
+});
 
-// Create Drizzle ORM instance with schema
-export const db = drizzle(sql, { schema })
+// Tạo proxy cho Drizzle ORM instance
+export const db = new Proxy({} as any, {
+  get: (target, prop) => {
+    if (prop === 'then' || prop === Symbol.toPrimitive || prop === Symbol.toStringTag) {
+      return undefined;
+    }
+    
+    if (typeof prop === 'symbol') {
+      return undefined;
+    }
+    
+    return async (...args: any[]) => {
+      const drizzleClient = await getDrizzleClient();
+      return drizzleClient[prop](...args);
+    };
+  }
+});
 
 // Export SQL client for direct queries
 export { sql as dbPool }

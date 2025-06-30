@@ -4,6 +4,9 @@ import { db } from "@/lib/db"
 import { transactions, users } from "@/lib/schema"
 import { eq, sql } from "drizzle-orm"
 
+// Định nghĩa kiểu dữ liệu cho transaction
+type DrizzleTransaction = any
+
 async function handler(req: NextApiRequest, res: NextApiResponse, session: any) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" })
@@ -34,7 +37,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
     const newBalance = currentBalance - Number(amount)
 
     // Create withdrawal transaction and deduct balance
-    await db.transaction(async (tx) => {
+    await db.transaction(async (tx: DrizzleTransaction) => {
       // Deduct amount from user balance
       await tx
         .update(users)

@@ -4,6 +4,9 @@ import { db } from "@/lib/db"
 import { trades, users, tradingSessions } from "@/lib/schema"
 import { eq, sql } from "drizzle-orm"
 
+// Định nghĩa kiểu dữ liệu cho transaction
+type DrizzleTransaction = any
+
 async function handler(req: NextApiRequest, res: NextApiResponse, session: any) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" })
@@ -43,7 +46,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
     const expiryTime = new Date(Date.now() + 60 * 1000); // Hết hạn sau 1 phút
     
     // Create trade in transaction
-    await db.transaction(async (tx) => {
+    await db.transaction(async (tx: DrizzleTransaction) => {
       // Deduct amount from user balance
       await tx
         .update(users)

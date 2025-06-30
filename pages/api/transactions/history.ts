@@ -2,7 +2,10 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import { requireAuth, withRateLimit } from "@/lib/api-utils"
 import { db } from "@/lib/db"
 import { transactions } from "@/lib/schema"
-import { eq, desc, count, and, SQL } from "drizzle-orm"
+import { eq, desc, count, and, SQL, InferModel } from "drizzle-orm"
+
+// Định nghĩa kiểu dữ liệu Transaction từ schema
+type Transaction = InferModel<typeof transactions>
 
 async function handler(req: NextApiRequest, res: NextApiResponse, session: any) {
   if (req.method !== "GET") {
@@ -49,7 +52,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
       db.select({ count: count() }).from(transactions).where(whereCondition),
     ])
 
-    const formattedTransactions = userTransactions.map((transaction) => ({
+    const formattedTransactions = userTransactions.map((transaction: Transaction) => ({
       id: transaction.id,
       type: transaction.type,
       amount: Number.parseFloat(transaction.amount),

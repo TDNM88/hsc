@@ -5,9 +5,13 @@ const nextConfig = {
 
   // Optimize for serverless deployment
   output: "standalone",
+  
+  // Sử dụng transpilePackages để xử lý các package có vấn đề với SSR
+  transpilePackages: ["@neondatabase/serverless"],
 
   experimental: {
-    serverComponentsExternalPackages: ["@neondatabase/serverless", "@upstash/redis"],
+    // Không đặt @neondatabase/serverless làm external package để tránh xung đột
+    serverComponentsExternalPackages: ["@upstash/redis"],
     // appDir is now stable in Next.js 14, no need to specify
     optimizeCss: true,
   },
@@ -119,10 +123,24 @@ const nextConfig = {
 
     // Xử lý lỗi "self is not defined" cho @neondatabase/serverless
     if (!isServer) {
+      // Trên client side, thay thế @neondatabase/serverless bằng một module rỗng
       config.resolve.alias = {
         ...config.resolve.alias,
-        '@neondatabase/serverless': false,
-      }
+        '@neondatabase/serverless': require.resolve('./lib/client-stubs/neon-stub.js'),
+      };
+      
+      // Thêm các fallback cho các module Node.js
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        child_process: false,
+        crypto: require.resolve('crypto-browserify'),
+        stream: require.resolve('stream-browserify'),
+        buffer: require.resolve('buffer'),
+        util: require.resolve('util'),
+      };
     } else {
       // Thêm alias cho môi trường server
       config.resolve.alias = {

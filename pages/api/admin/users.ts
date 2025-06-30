@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { withRateLimit, requireRole } from "@/lib/api-utils"
 import { db } from "@/lib/db"
-import { users } from "@/lib/schema"
+import { users, type User } from "@/lib/schema"
 import { eq, like, or, count, desc, and } from "drizzle-orm"
 import jwt from "jsonwebtoken"
 
@@ -85,7 +85,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse, session: any) 
           db.select({ count: count() }).from(users).where(whereCondition),
         ])
 
-        const formattedUsers = usersList.map((user) => ({
+        const formattedUsers = usersList.map((user: User) => ({
           id: user.id,
           username: user.username,
           email: user.email,

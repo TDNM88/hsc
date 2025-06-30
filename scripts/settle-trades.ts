@@ -2,6 +2,9 @@ import { db } from "../lib/db"
 import { trades, users } from "../lib/schema"
 import { eq, sql } from "drizzle-orm"
 
+// Định nghĩa kiểu dữ liệu cho transaction
+type DrizzleTransaction = any
+
 // Simple trade settlement script
 async function settleTrades() {
   try {
@@ -16,7 +19,7 @@ async function settleTrades() {
       const profit = isWin ? Number.parseFloat(trade.amount) * 0.8 : -Number.parseFloat(trade.amount)
       const status = isWin ? "won" : "lost"
 
-      await db.transaction(async (tx) => {
+      await db.transaction(async (tx: DrizzleTransaction) => {
         // Update trade
         await tx
           .update(trades)
