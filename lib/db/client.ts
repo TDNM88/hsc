@@ -1,30 +1,52 @@
-import { neon } from "@neondatabase/serverless"
-import { drizzle } from "drizzle-orm/neon-http"
-import * as schema from "../schema"
+import { config } from '../../config';
+import * as schema from '../schema';
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is required")
-}
+type DatabaseType = 'postgres' | 'sqlite';
 
-// Create Neon HTTP client
-const sql = neon(process.env.DATABASE_URL)
+let db: any;
+let dbPool: any;
 
-// Create Drizzle database instance with schema
-export const db = drizzle(sql, { schema })
+async function initializeDatabase() {
+  const dbType = config.databaseType as DatabaseType;
 
-// Export SQL client for raw queries
-export { sql }
-
-// Test database connection
-export async function testDatabaseConnection() {
-  try {
-    const result = await sql`SELECT NOW() as current_time`
-    console.log("✅ Database connected successfully at:", result[0]?.current_time)
-    return true
-  } catch (error) {
-    console.error("❌ Database connection failed:", error)
-    return false
+  if (dbType === 'postgres') {
+    // PostgreSQL configuration
+    const { Client } = await import('pg');
+    const { drizzle } = await import('drizzle-orm/node-postgres');
+    
+    const client = new Client({
+      connectionString: config.databaseUrl,
+      ssl: config.nodeEnv === 'production' ? { rejectUnauthorized: false } : undefined,
+    });
+    
+    await client.connect();
+    
+    db = drizzle(client, { 
+      schema,
+      logger: config.nodeEnv === 'development',
+    });
+    
+    dbPool = client;
+  } else {
+    // SQLite configuration
+    const Database = (await import('better-sqlite3')).default;
+    const { drizzle } = await import('drizzle-orm/better-sqlite3');
+    
+    const sqlite = new Database(config.sqlitePath || 'london.db');
+    sqlite.pragma('journal_mode = WAL');
+    sqlite.pragma('foreign_keys = ON');
+    
+    db = drizzle(sqlite, { 
+      schema,
+      logger: config.nodeEnv === 'development',
+    });
+    
+    dbPool = sqlite;
   }
 }
 
-export default db
+// Initialize the database
+initializeDatabase().catch(console.error);
+
+export { db, dbPool };
+export default db;

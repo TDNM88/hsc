@@ -1,52 +1,100 @@
-import { createContext, useContext } from 'react';
+"use client"
+
+import React from "react"
+import { createContext, useContext, useState, useEffect, ReactNode } from "react"
 
 export interface User {
-  id: string;
-  email: string;
-  name: string;
-  username: string;
-  role: string;
-  balance: number;
-  isVerified: boolean;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  uid: string;
-  minimumBet?: number;
-  minimumDeposit?: number;
-  minimumWithdraw?: number;
-  isLockWithdraw?: boolean;
+  id: number
+  username: string
+  email: string
+  balance: number
+  role: string
+  uid?: string
+  createdAt?: string | Date
+  isVerified?: boolean
+  // Add any other properties that might be needed
 }
 
-const mockUser: User = {
-  id: 'mock-user-123',
-  uid: 'mock-user-123',
-  email: 'guest@example.com',
-  name: 'Guest User',
-  username: 'guest',
-  role: 'user',
-  balance: 1000000,
-  isVerified: true,
-  isActive: true,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  minimumBet: 10000,
-  minimumDeposit: 50000,
-  minimumWithdraw: 100000,
-  isLockWithdraw: false,
-};
+interface UserContextType {
+  user: User | null
+  loading: boolean
+  refreshUser: () => Promise<void>
+}
 
-export const MockUserContext = createContext<User>(mockUser);
+// Create a context for the mock user
+const MockUserContext = createContext<UserContextType | undefined>(undefined)
 
-export const useMockUser = () => {
-  return useContext(MockUserContext);
-};
+// Create a provider component
+export function MockUserProvider({ children }: { children: ReactNode }): JSX.Element {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
-export const useMockAuth = () => {
-  return {
-    user: mockUser,
-    isLoading: false,
-    isAuthenticated: true,
-    isAdmin: false,
-  };
-};
+  const fetchUser = async (): Promise<void> => {
+    try {
+      const token =
+        localStorage.getItem("token") ||
+        document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("token="))
+          ?.split("=")[1]
+
+      if (!token) {
+        setLoading(false)
+        return
+      }
+
+      const response = await fetch("/api/auth/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        setUser({
+          id: userData.user.id,
+          username: userData.user.username,
+          email: userData.user.email,
+          balance: Number.parseFloat(userData.user.balance),
+          role: userData.user.role,
+        })
+      } else {
+        // Token invalid, remove it
+        localStorage.removeItem("token")
+        document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
+        setUser(null)
+      }
+    } catch (error) {
+      console.error("Error fetching user:", error)
+      setUser(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchUser()
+  }, [])
+
+  const contextValue: UserContextType = {
+    user,
+    loading,
+    refreshUser: fetchUser
+  }
+
+  // Always render the provider, but children can check loading state
+  return React.createElement(
+    MockUserContext.Provider,
+    { value: contextValue },
+    !loading ? children : null
+  )
+}
+
+// Custom hook to use the mock user
+export function useMockUser(): UserContextType {
+  const context = useContext(MockUserContext)
+  if (context === undefined) {
+    throw new Error('useMockUser must be used within a MockUserProvider')
+  }
+  return context
+}

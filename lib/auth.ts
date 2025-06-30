@@ -1,307 +1,482 @@
-import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
-import type { NextApiRequest, NextApiResponse } from "next"
+import bcrypt from "bcryptjs"
 import { sql } from "./db"
-
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production"
-const JWT_EXPIRES_IN = "7d"
+import { config } from "../config"
+import type { NextApiRequest, NextApiResponse } from "next"
 
 export interface User {
-  id: string
-  email: string
-  name: string | null
+  id: number
+  uuid: string
   username: string
-  role: "user" | "admin"
-  balance: string
-  isVerified: boolean
-  lastLogin: Date | null
-}
-
-export interface CreateUserData {
   email: string
-  name?: string
-  username: string
   password: string
+  firstName?: string
+  lastName?: string
+  fullName?: string
   phone?: string
+  balance: string
+  currency: string
+  role: string
+  status: string
+  isVerified: boolean
+  isEmailVerified: boolean
+  kycStatus: string
+  twoFactorEnabled: boolean
+  referralCode?: string
+  avatar?: string
+  preferences: any
+  createdAt: string
+  updatedAt: string
+  passwordChangedAt?: string
+  passwordResetToken?: string | null
+  passwordResetExpires?: string | null
 }
 
-// Generate simple ID
-function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`
+export interface AuthResult {
+  success: boolean
+  user?: User
+  token?: string
+  error?: string
+  message?: string
+}
+
+export interface LoginCredentials {
+  email: string
+  password: string
+}
+
+export interface RegisterData {
+  username: string
+  email: string
+  password: string
+  firstName?: string
+  lastName?: string
+  phone?: string
+  referralCode?: string
 }
 
 // Hash password
 export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 12)
+  return bcrypt.hash(password, config.auth.bcryptRounds)
 }
 
 // Verify password
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash)
+export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+  return bcrypt.compare(password, hashedPassword)
 }
 
 // Generate JWT token
-export function generateToken(payload: any): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN })
+export function generateToken(payload: object | string | Buffer): string {
+  return jwt.sign(payload, config.auth.jwtSecret, {
+    expiresIn: config.auth.jwtExpiresIn,
+  } as jwt.SignOptions)
 }
 
 // Verify JWT token
 export function verifyToken(token: string): any {
   try {
-    return jwt.verify(token, JWT_SECRET)
+    return jwt.verify(token, config.auth.jwtSecret)
   } catch (error) {
-    return null
+    throw new Error("Invalid token")
   }
 }
 
-// Set auth cookie
-export function setAuthCookie(res: NextApiResponse, token: string) {
-  res.setHeader(
-    "Set-Cookie",
-    `auth-token=${token}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=Strict${
-      process.env.NODE_ENV === "production" ? "; Secure" : ""
-    }`,
-  )
+// Generate referral code
+export function generateReferralCode(username: string): string {
+  const timestamp = Date.now().toString(36)
+  const random = Math.random().toString(36).substring(2, 8)
+  return `${username.substring(0, 4).toUpperCase()}${timestamp}${random}`.substring(0, 12)
 }
 
-// Clear auth cookie
-export function clearAuthCookie(res: NextApiResponse) {
-  res.setHeader(
-    "Set-Cookie",
-    `auth-token=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict${
-      process.env.NODE_ENV === "production" ? "; Secure" : ""
-    }`,
-  )
-}
-
-// Get auth token from request
-export function getAuthToken(req: NextApiRequest): string | null {
-  return req.cookies["auth-token"] || null
-}
-
-// Check if email exists
-export async function emailExists(email: string): Promise<boolean> {
+// Register new user
+export async function register(data: RegisterData): Promise<AuthResult> {
   try {
-    const result = await sql`
-      SELECT id FROM neon_auth.users_sync 
-      WHERE email = ${email} 
-      LIMIT 1
-    `
-    return result.length > 0
-  } catch (error) {
-    console.error("Error checking email:", error)
-    return false
-  }
-}
-
-// Check if username exists
-export async function usernameExists(username: string): Promise<boolean> {
-  try {
-    const result = await sql`
-      SELECT id FROM neon_auth.user_profiles 
-      WHERE username = ${username} 
-      LIMIT 1
-    `
-    return result.length > 0
-  } catch (error) {
-    console.error("Error checking username:", error)
-    return false
-  }
-}
-
-// Create user
-export async function createUser(userData: CreateUserData): Promise<User> {
-  const { email, name, username, password, phone } = userData
-
-  // Check if user already exists
-  if (await emailExists(email)) {
-    throw new Error("Email already exists")
-  }
-
-  if (await usernameExists(username)) {
-    throw new Error("Username already exists")
-  }
-
-  // Hash password
-  const passwordHash = await hashPassword(password)
-  const userId = generateId()
-  const profileId = generateId()
-
-  try {
-    // Create user in users_sync table
-    await sql`
-      INSERT INTO neon_auth.users_sync (id, email, name, created_at, updated_at)
-      VALUES (${userId}, ${email}, ${name || username}, NOW(), NOW())
+    // Check if user already exists
+    const existingUser = await sql`
+      SELECT id FROM users 
+      WHERE email = ${data.email} OR username = ${data.username}
     `
 
-    // Create user profile
-    await sql`
-      INSERT INTO neon_auth.user_profiles (
-        id, user_id, username, password_hash, phone, balance, 
-        role, is_verified, is_active, created_at, updated_at
-      )
-      VALUES (
-        ${profileId}, ${userId}, ${username}, ${passwordHash}, ${phone || null}, 
-        1000.00, 'user', true, true, NOW(), NOW()
-      )
+    if (existingUser.length > 0) {
+      return {
+        success: false,
+        error: "User with this email or username already exists",
+      }
+    }
+
+    // Hash password
+    const hashedPassword = await hashPassword(data.password)
+
+    // Generate referral code
+    const referralCode = generateReferralCode(data.username)
+
+    // Handle referral
+    let referredBy = null
+    if (data.referralCode) {
+      const referrer = await sql`
+        SELECT id FROM users WHERE referral_code = ${data.referralCode}
+      `
+      if (referrer.length > 0) {
+        referredBy = referrer[0].id
+      }
+    }
+
+    // Create user
+    const newUser = await sql`
+      INSERT INTO users (
+        username, email, password, first_name, last_name, 
+        full_name, phone, referral_code, referred_by,
+        balance, currency, role, status, is_verified, 
+        is_email_verified, kyc_status, two_factor_enabled
+      ) VALUES (
+        ${data.username}, ${data.email}, ${hashedPassword}, 
+        ${data.firstName || null}, ${data.lastName || null},
+        ${data.firstName && data.lastName ? `${data.firstName} ${data.lastName}` : null},
+        ${data.phone || null}, ${referralCode}, ${referredBy},
+        ${config.trading.defaultBalance}, 'USD', 'user', 'active', 
+        false, false, 'pending', false
+      ) RETURNING *
     `
 
-    // Get complete user data
-    const result = await sql`
-      SELECT 
-        u.id, u.email, u.name,
-        up.username, up.role, up.balance, up.is_verified, up.last_login
-      FROM neon_auth.users_sync u
-      JOIN neon_auth.user_profiles up ON u.id = up.user_id
-      WHERE u.id = ${userId}
-    `
+    if (newUser.length === 0) {
+      return {
+        success: false,
+        error: "Failed to create user",
+      }
+    }
+
+    const user = newUser[0] as User
+
+    // Create referral record if referred
+    if (referredBy) {
+      await sql`
+        INSERT INTO referrals (referrer_id, referred_id, level, status)
+        VALUES (${referredBy}, ${user.id}, 1, 'active')
+      `
+    }
+
+    // Generate token
+    const token = generateToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    })
+
+    // Create session
+    await createSession(user.id, token)
 
     return {
-      id: result[0].id,
-      email: result[0].email,
-      name: result[0].name,
-      username: result[0].username,
-      role: result[0].role,
-      balance: result[0].balance,
-      isVerified: result[0].is_verified,
-      lastLogin: result[0].last_login,
+      success: true,
+      user,
+      token,
+      message: "Registration successful",
     }
   } catch (error) {
-    console.error("Error creating user:", error)
-    throw new Error("Failed to create user")
+    console.error("Registration error:", error)
+    return {
+      success: false,
+      error: "Registration failed",
+    }
   }
 }
 
-// Authenticate user
-export async function authenticateUser(identifier: string, password: string): Promise<User | null> {
+// Login user
+export async function login(credentials: LoginCredentials): Promise<AuthResult> {
   try {
-    // Get user by email or username
-    const result = await sql`
-      SELECT 
-        u.id, u.email, u.name,
-        up.username, up.password_hash, up.role, up.balance, 
-        up.is_verified, up.is_active, up.last_login
-      FROM neon_auth.users_sync u
-      JOIN neon_auth.user_profiles up ON u.id = up.user_id
-      WHERE u.email = ${identifier} OR up.username = ${identifier}
-      LIMIT 1
+    // Find user by email
+    const users = await sql`
+      SELECT * FROM users 
+      WHERE email = ${credentials.email} AND deleted_at IS NULL
     `
 
-    if (result.length === 0) {
-      return null
+    if (users.length === 0) {
+      return {
+        success: false,
+        error: "Invalid email or password",
+      }
     }
 
-    const userRecord = result[0]
+    const user = users[0] as User
 
-    // Check if account is active
-    if (!userRecord.is_active || !userRecord.is_verified) {
-      return null
+    // Check if account is locked
+    if (user.status === "locked") {
+      return {
+        success: false,
+        error: "Account is locked. Please contact support.",
+      }
     }
 
     // Verify password
-    const isValidPassword = await verifyPassword(password, userRecord.password_hash)
+    const isValidPassword = await verifyPassword(credentials.password, user.password)
+
     if (!isValidPassword) {
+      // Increment login attempts
+      await sql`
+        UPDATE users 
+        SET login_attempts = login_attempts + 1,
+            updated_at = NOW()
+        WHERE id = ${user.id}
+      `
+
+      return {
+        success: false,
+        error: "Invalid email or password",
+      }
+    }
+
+    // Reset login attempts and update last login
+    await sql`
+      UPDATE users 
+      SET login_attempts = 0,
+          last_login_at = NOW(),
+          updated_at = NOW()
+      WHERE id = ${user.id}
+    `
+
+    // Generate token
+    const token = generateToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    })
+
+    // Create session
+    await createSession(user.id, token)
+
+    // Remove password from response
+    const { password, ...userWithoutPassword } = user
+
+    return {
+      success: true,
+      user: userWithoutPassword as User,
+      token,
+      message: "Login successful",
+    }
+  } catch (error) {
+    console.error("Login error:", error)
+    return {
+      success: false,
+      error: "Login failed",
+    }
+  }
+}
+
+// Create user session
+export async function createSession(
+  userId: number,
+  token: string,
+  ipAddress?: string,
+  userAgent?: string,
+): Promise<void> {
+  const expiresAt = new Date()
+  expiresAt.setTime(expiresAt.getTime() + config.auth.sessionDuration * 1000)
+
+  await sql`
+    INSERT INTO user_sessions (user_id, token, ip_address, user_agent, expires_at)
+    VALUES (${userId}, ${token}, ${ipAddress || null}, ${userAgent || null}, ${expiresAt.toISOString()})
+  `
+}
+
+// Validate session
+export async function validateSession(token: string): Promise<User | null> {
+  try {
+    // Verify JWT token
+    const decoded = verifyToken(token)
+
+    // Check session in database
+    const sessions = await sql`
+      SELECT us.*, u.* FROM user_sessions us
+      JOIN users u ON us.user_id = u.id
+      WHERE us.token = ${token} 
+        AND us.is_active = true 
+        AND us.expires_at > NOW()
+        AND u.deleted_at IS NULL
+    `
+
+    if (sessions.length === 0) {
       return null
     }
 
-    // Update last login
-    await sql`
-      UPDATE neon_auth.user_profiles 
-      SET last_login = NOW(), updated_at = NOW()
-      WHERE user_id = ${userRecord.id}
-    `
+    const session = sessions[0]
+    const { password, ...user } = session
 
-    return {
-      id: userRecord.id,
-      email: userRecord.email,
-      name: userRecord.name,
-      username: userRecord.username,
-      role: userRecord.role,
-      balance: userRecord.balance,
-      isVerified: userRecord.is_verified,
-      lastLogin: new Date(),
-    }
+    return user as User
   } catch (error) {
-    console.error("Authentication error:", error)
+    console.error("Session validation error:", error)
     return null
   }
 }
 
-// Get user from token
-export async function getUserFromToken(token: string): Promise<User | null> {
+// Logout user
+export async function logout(token: string): Promise<boolean> {
   try {
-    const decoded = verifyToken(token)
-    if (!decoded) return null
+    await sql`
+      UPDATE user_sessions 
+      SET is_active = false, updated_at = NOW()
+      WHERE token = ${token}
+    `
+    return true
+  } catch (error) {
+    console.error("Logout error:", error)
+    return false
+  }
+}
 
-    const result = await sql`
-      SELECT 
-        u.id, u.email, u.name,
-        up.username, up.role, up.balance, up.is_verified, up.last_login
-      FROM neon_auth.users_sync u
-      JOIN neon_auth.user_profiles up ON u.id = up.user_id
-      WHERE u.id = ${decoded.userId} AND up.is_active = true
-      LIMIT 1
+// Change password
+export async function changePassword(
+  userId: number,
+  currentPassword: string,
+  newPassword: string,
+): Promise<AuthResult> {
+  try {
+    // Get current user
+    const users = await sql`
+      SELECT password FROM users WHERE id = ${userId}
     `
 
-    if (result.length === 0) return null
+    if (users.length === 0) {
+      return {
+        success: false,
+        error: "User not found",
+      }
+    }
 
-    const userRecord = result[0]
+    // Verify current password
+    const isValidPassword = await verifyPassword(currentPassword, users[0].password)
+
+    if (!isValidPassword) {
+      return {
+        success: false,
+        error: "Current password is incorrect",
+      }
+    }
+
+    // Hash new password
+    const hashedNewPassword = await hashPassword(newPassword)
+
+    // Update password
+    await sql`
+      UPDATE users 
+      SET password = ${hashedNewPassword}, updated_at = NOW()
+      WHERE id = ${userId}
+    `
+
+    // Invalidate all sessions for security
+    await sql`
+      UPDATE user_sessions 
+      SET is_active = false, updated_at = NOW()
+      WHERE user_id = ${userId}
+    `
+
     return {
-      id: userRecord.id,
-      email: userRecord.email,
-      name: userRecord.name,
-      username: userRecord.username,
-      role: userRecord.role,
-      balance: userRecord.balance,
-      isVerified: userRecord.is_verified,
-      lastLogin: userRecord.last_login,
+      success: true,
+      message: "Password changed successfully",
     }
   } catch (error) {
-    console.error("Get user from token error:", error)
+    console.error("Change password error:", error)
+    return {
+      success: false,
+      error: "Failed to change password",
+    }
+  }
+}
+
+// Get user by ID
+export async function getUserById(userId: number): Promise<User | null> {
+  try {
+    const users = await sql`
+      SELECT * FROM users 
+      WHERE id = ${userId} AND deleted_at IS NULL
+    `
+
+    if (users.length === 0) {
+      return null
+    }
+
+    const { password, ...user } = users[0]
+    return user as User
+  } catch (error) {
+    console.error("Get user error:", error)
     return null
   }
 }
 
-// Get current user from request
-export async function getCurrentUser(req: NextApiRequest): Promise<User | null> {
-  const token = getAuthToken(req)
-  if (!token) return null
-  return getUserFromToken(token)
-}
+// Middleware to protect routes
+export function withAuth(handler: (req: NextApiRequest, res: NextApiResponse, user: User) => Promise<void>) {
+  return async (req: NextApiRequest, res: NextApiResponse) => {
+    try {
+      const token = req.headers.authorization?.replace("Bearer ", "") || req.cookies.token
 
-// Rate limiting helper
-export async function checkRateLimit(identifier: string, maxAttempts = 5, windowMinutes = 15): Promise<boolean> {
-  try {
-    const windowStart = new Date(Date.now() - windowMinutes * 60 * 1000)
+      if (!token) {
+        return res.status(401).json({ error: "No token provided" })
+      }
 
-    const attempts = await sql`
-      SELECT COUNT(*) as count
-      FROM neon_auth.login_attempts
-      WHERE ip_address = ${identifier} 
-      AND created_at >= ${windowStart.toISOString()}
-      AND success = false
-    `
+      const user = await validateSession(token)
 
-    return (attempts[0]?.count || 0) < maxAttempts
-  } catch (error) {
-    console.error("Error checking rate limit:", error)
-    return true // Allow on error
+      if (!user) {
+        return res.status(401).json({ error: "Invalid or expired token" })
+      }
+
+      return handler(req, res, user)
+    } catch (error) {
+      console.error("Auth middleware error:", error)
+      return res.status(500).json({ error: "Authentication failed" })
+    }
   }
 }
 
-// Log login attempt
-export async function logLoginAttempt(
-  userId: string | null,
-  ipAddress: string,
-  userAgent: string | undefined,
-  success: boolean,
-) {
+// Middleware to check admin role
+export function withAdminAuth(handler: (req: NextApiRequest, res: NextApiResponse, user: User) => Promise<void>) {
+  return withAuth(async (req, res, user) => {
+    if (user.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" })
+    }
+    return handler(req, res, user)
+  })
+}
+
+// Clean expired sessions
+export async function cleanExpiredSessions(): Promise<void> {
   try {
     await sql`
-      INSERT INTO neon_auth.login_attempts (id, user_id, ip_address, user_agent, success, created_at)
-      VALUES (${generateId()}, ${userId}, ${ipAddress}, ${userAgent || null}, ${success}, NOW())
+      DELETE FROM user_sessions 
+      WHERE expires_at < NOW() OR is_active = false
     `
   } catch (error) {
-    console.error("Error logging login attempt:", error)
+    console.error("Clean expired sessions error:", error)
   }
+}
+
+// Check if email already exists
+export async function emailExists(email: string): Promise<boolean> {
+  const result = await sql`
+    SELECT 1 FROM users 
+    WHERE email = ${email} 
+    AND deleted_at IS NULL
+    LIMIT 1
+  `
+  return result.length > 0
+}
+
+// Check if username already exists
+export async function usernameExists(username: string): Promise<boolean> {
+  const result = await sql`
+    SELECT 1 FROM users 
+    WHERE username = ${username} 
+    AND deleted_at IS NULL
+    LIMIT 1
+  `
+  return result.length > 0
+}
+
+export default {
+  register,
+  login,
+  logout,
+  changePassword,
+  validateSession,
+  getUserById,
+  withAuth,
+  withAdminAuth,
+  cleanExpiredSessions,
 }
