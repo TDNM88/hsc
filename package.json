@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--require=./direct-fix.js next dev",
-    "build": "node patch-route-loader.js && cross-env NODE_OPTIONS=--require=./patch-route-loader.js next build -c minimal.config.js",
+    "build": "node patch-route-loader.js && cross-env NODE_OPTIONS=--require=./patch-route-loader.js NEXT_CONFIG_FILE=minimal.config.js next build",
     "start": "cross-env NODE_ENV=production NODE_OPTIONS=--require=./direct-fix.js next start",
     "start:next": "node -r ./node-polyfill-register.js ./node_modules/.bin/next start",
     "lint": "next lint"
