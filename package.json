@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node -r ./node-polyfill-register.js server.js",
-    "build": "node build-with-fix.js",
-    "start": "cross-env NODE_ENV=production node -r ./node-polyfill-register.js server.js",
+    "dev": "cross-env NODE_OPTIONS=--require=./direct-fix.js next dev",
+    "build": "node patch-next.js && node styled-jsx-fix.js && next build",
+    "start": "cross-env NODE_ENV=production NODE_OPTIONS=--require=./direct-fix.js next start",
     "start:next": "node -r ./node-polyfill-register.js ./node_modules/.bin/next start",
     "lint": "next lint"
   },
