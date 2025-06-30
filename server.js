@@ -1,12 +1,20 @@
 // Custom Next.js server with polyfills
+
+// Load polyfills before anything else
+require('./next-polyfill');
+
 const { createServer } = require('http');
 const { parse } = require('url');
-const next = require('next');
 
-// Polyfill browser globals
+// Use our custom next module with polyfills
+const next = require('./next-polyfill');
+
+// Additional polyfills for browser globals
 global.self = global;
 global.window = global;
 global.navigator = { userAgent: 'node' };
+global.document = global.document || {};
+global.localStorage = global.localStorage || { getItem: () => null, setItem: () => {} };
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });

@@ -1,3 +1,6 @@
+// Import our custom plugin
+const SelfPolyfillPlugin = require('./plugins/self-polyfill-plugin');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -94,20 +97,20 @@ const nextConfig = {
   },
 
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Fix for "self is not defined" error
+    // Add our custom plugin to fix the "self is not defined" error
+    config.plugins.push(new SelfPolyfillPlugin());
+    
+    // Define global objects for server-side rendering
     if (isServer) {
-      // Add Node.js polyfills for server-side code
-      const originalEntry = config.entry;
-      config.entry = async () => {
-        const entries = await originalEntry();
-        
-        // Add polyfill for 'self'
-        if (entries['main.js'] && !entries['main.js'].includes('./lib/polyfills.js')) {
-          entries['main.js'].unshift('./lib/polyfills.js');
-        }
-        
-        return entries;
-      };
+      config.plugins.push(
+        new webpack.DefinePlugin({
+          'self': 'global.self || global',
+          'window': 'global.window || global',
+          'document': 'global.document || {}',
+          'navigator': 'global.navigator || { userAgent: "node" }',
+          'localStorage': 'global.localStorage || { getItem: () => null, setItem: () => {} }'
+        })
+      );
     }
     
     // Optimize bundle size

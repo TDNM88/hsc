@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node server.js",
-    "build": "next build",
-    "start": "cross-env NODE_ENV=production node server.js",
-    "start:next": "next start",
+    "dev": "node -r ./node-polyfill-register.js server.js",
+    "build": "node -r ./node-polyfill-register.js ./node_modules/.bin/next build && node patch-vendors.js",
+    "start": "cross-env NODE_ENV=production node -r ./node-polyfill-register.js server.js",
+    "start:next": "node -r ./node-polyfill-register.js ./node_modules/.bin/next start",
     "lint": "next lint"
   },
   "dependencies": {
