@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node simple-server.js",
     "build": "c:\\Users\\trung\\Downloads\\ssi1102\\run-next-build.bat",
-    "vercel-build": "node -r ./vercel-build.js next build",
+    "vercel-build": "node ./vercel-next-build.js",
     "start": "cross-env NODE_ENV=production node simple-server.js",
     "export": "cross-env NODE_ENV=production node -e \"require('./direct-fix.js'); require('next').default.build();\"",
     "lint": "next lint"

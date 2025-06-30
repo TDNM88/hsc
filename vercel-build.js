@@ -60,3 +60,11 @@ process.env.NEXT_CONFIG_FILE = 'next.config.vercel.js';
 if (require.main !== module) {
   console.log('✅ Vercel build script loaded as a module with next.config.vercel.js');
 }
+
+// Export một hàm để sử dụng trong các module khác nếu cần
+module.exports = {
+  setupBrowserGlobals: () => {
+    console.log('🔧 Setting up browser globals from exported function');
+    // Định nghĩa các biến toàn cục của trình duyệt ở đây
+  }
+};
