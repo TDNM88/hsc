@@ -1,60 +1,31 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// Get __dirname equivalent in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
+  reactStrictMode: true,
+  swcMinify: true,
+  output: "standalone",
+  transpilePackages: ["@neondatabase/serverless"],
+  experimental: {
+    serverComponentsExternalPackages: ["@upstash/redis"],
+    optimizeCss: true,
   },
   images: {
+    domains: ["localhost", "vercel.app", "tradingview.com", "s3.tradingview.com", "widgetdata.tradingview.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+    ],
+    formats: ["image/webp", "image/avif"],
+    minimumCacheTTL: 60,
     unoptimized: true,
   },
-  transpilePackages: ['drizzle-orm', 'pg'],
-  // Server Actions are enabled by default in current Next.js versions
-  experimental: {
-    // Add any other experimental features here
-  },
   
-  // Enable CORS for API routes
-  async headers() {
-    return [
-      {
-        // Match all API routes
-        source: '/api/:path*',
-        headers: [
-          { key: 'Access-Control-Allow-Credentials', value: 'true' },
-          { key: 'Access-Control-Allow-Origin', value: '*' },
-          { key: 'Access-Control-Allow-Methods', value: 'GET,OPTIONS,PATCH,DELETE,POST,PUT' },
-          { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version' },
-        ],
-      },
-    ];
-  },
-  // Note: onError should be handled in your API routes or middleware, not in next.config.mjs
-  webpack: async (config, { isServer, dev, webpack }) => {
-    // Fix for "self is not defined" error
+  // Simple webpack configuration that only adds the necessary polyfills
+  webpack: (config, { isServer, webpack }) => {
+    // Add polyfills for browser globals on server side
     if (isServer) {
-      // Add Node.js polyfills for server-side code
-      const originalEntry = config.entry;
-      config.entry = async () => {
-        const entries = await originalEntry();
-        
-        // Add polyfill for 'self'
-        if (entries['main.js'] && !entries['main.js'].includes('./lib/polyfills.js')) {
-          entries['main.js'].unshift('./lib/polyfills.js');
-        }
-        
-        return entries;
-      };
-      
-      // Add DefinePlugin to define globals
+      // Use DefinePlugin to define globals
       config.plugins.push(
         new webpack.DefinePlugin({
           'global.self': 'global',
@@ -97,26 +68,8 @@ const nextConfig = {
       });
     }
     
-    // Client-side fallbacks
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-      };
-    }
-
-    // Add path aliases
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@': __dirname,
-      '@/lib': path.resolve(__dirname, './lib'),
-      '@/components': path.resolve(__dirname, './components'),
-      '@/hooks': path.resolve(__dirname, './hooks'),
-      '@/types': path.resolve(__dirname, './types'),
-    };
-
     return config;
   },
-}
+};
 
-export default nextConfig
+module.exports = nextConfig;

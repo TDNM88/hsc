@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--require=./direct-fix.js next dev",
-    "build": "node patch-next.js && node styled-jsx-fix.js && next build",
+    "build": "cross-env NODE_OPTIONS=--require=./direct-fix.js next build",
     "start": "cross-env NODE_ENV=production NODE_OPTIONS=--require=./direct-fix.js next start",
     "start:next": "node -r ./node-polyfill-register.js ./node_modules/.bin/next start",
     "lint": "next lint"

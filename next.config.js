@@ -143,14 +143,16 @@ const nextConfig = {
     // Xử lý lỗi "self is not defined" cho @neondatabase/serverless
     if (!isServer) {
       // Trên client side, thay thế @neondatabase/serverless bằng một module rỗng
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        '@neondatabase/serverless': require.resolve('./lib/client-stubs/neon-stub.js'),
-      };
+      // IMPORTANT: Don't override the entire alias object, just add to it
+      if (!config.resolve) config.resolve = {};
+      if (!config.resolve.alias) config.resolve.alias = {};
+      
+      config.resolve.alias['@neondatabase/serverless'] = require.resolve('./lib/client-stubs/neon-stub.js');
       
       // Thêm các fallback cho các module Node.js
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
+      if (!config.resolve.fallback) config.resolve.fallback = {};
+      
+      Object.assign(config.resolve.fallback, {
         fs: false,
         net: false,
         tls: false,
@@ -159,13 +161,14 @@ const nextConfig = {
         stream: require.resolve('stream-browserify'),
         buffer: require.resolve('buffer'),
         util: require.resolve('util'),
-      };
+      });
     } else {
       // Thêm alias cho môi trường server
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        "@": require("path").resolve(__dirname),
-      }
+      // IMPORTANT: Don't override the entire alias object, just add to it
+      if (!config.resolve) config.resolve = {};
+      if (!config.resolve.alias) config.resolve.alias = {};
+      
+      config.resolve.alias['@'] = require("path").resolve(__dirname);
     }
 
     // Handle SVG files
