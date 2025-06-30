@@ -42,47 +42,44 @@ module.constructor.prototype.require = function(id) {
   return exports;
 };
 
-// Set production mode
+// Set environment variables
 process.env.NODE_ENV = 'production';
+process.env.NEXT_CONFIG_FILE = 'next.config.simple.js';
 
-// Run Next.js build
+// Run Next.js CLI directly
 console.log('🚀 Starting Next.js build with polyfills...');
 
-// Use the correct Next.js API for building
-const { build } = require('next/dist/build');
-const { PHASE_PRODUCTION_BUILD } = require('next/constants');
-const loadConfig = require('next/dist/server/config').default;
-const { resolve } = require('path');
+// Execute the Next.js CLI build command
+const { spawn } = require('child_process');
+const path = require('path');
 
-// Minimal Next.js config
-const nextConfig = {
-  reactStrictMode: true,
-  swcMinify: true,
-  output: "standalone",
-  transpilePackages: ["@neondatabase/serverless"],
-  experimental: {
-    serverComponentsExternalPackages: ["@upstash/redis"],
+// Find the Next.js CLI path - use .cmd extension on Windows
+const isWindows = process.platform === 'win32';
+const nextBinPath = path.resolve(
+  __dirname, 
+  'node_modules', 
+  '.bin', 
+  isWindows ? 'next.cmd' : 'next'
+);
+
+console.log(`Using Next.js binary at: ${nextBinPath}`);
+
+// Spawn the Next.js CLI process
+const nextProcess = spawn(nextBinPath, ['build'], {
+  stdio: 'inherit',
+  env: {
+    ...process.env,
+    NODE_OPTIONS: '--require=./direct-fix.js'
   }
-};
+});
 
-async function runBuild() {
-  try {
-    // Load the Next.js configuration
-    const config = await loadConfig(PHASE_PRODUCTION_BUILD, resolve(process.cwd()));
-    
-    // Override with our minimal config
-    Object.assign(config, nextConfig);
-    
-    // Run the build
-    await build(process.cwd(), config);
-    
+// Handle process completion
+nextProcess.on('close', (code) => {
+  if (code === 0) {
     console.log('✅ Build completed successfully!');
     process.exit(0);
-  } catch (error) {
-    console.error('❌ Build failed:', error);
-    process.exit(1);
+  } else {
+    console.error(`❌ Build failed with code ${code}`);
+    process.exit(code);
   }
-}
-
-// Run the build
-runBuild();
+});
