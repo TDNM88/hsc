@@ -10,8 +10,9 @@ let routeLoaderPath = '';
 
 // Look for the route loader in both regular and pnpm paths
 const possiblePaths = [
-  path.join(nodeModulesPath, 'next', 'dist', 'build', 'webpack', 'loaders', 'next-route-loader', 'index.js'),
-  path.join(nodeModulesPath, '.pnpm', 'next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1', 'node_modules', 'next', 'dist', 'build', 'webpack', 'loaders', 'next-route-loader', 'index.js')
+  // Try the pnpm path first since that's what the error shows
+  path.join(nodeModulesPath, '.pnpm', 'next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1', 'node_modules', 'next', 'dist', 'build', 'webpack', 'loaders', 'next-route-loader', 'index.js'),
+  path.join(nodeModulesPath, 'next', 'dist', 'build', 'webpack', 'loaders', 'next-route-loader', 'index.js')
 ];
 
 for (const possiblePath of possiblePaths) {
@@ -43,11 +44,31 @@ try {
   if (content.includes('// PATCHED_FOR_SOURCE_ISSUE')) {
     console.log('✅ Route loader already patched');
   } else {
-    // Add a safety check for _source property
-    const patchedContent = content.replace(
+    // Add a safety check for _source property - more aggressive patch
+    let patchedContent = content;
+    
+    // First patch: Replace direct assignments
+    patchedContent = patchedContent.replace(
       /(_source\s*=\s*source)/g,
       '// PATCHED_FOR_SOURCE_ISSUE\n      _source = source || { value: "", get() { return this.value; }, set(v) { this.value = v; } }'
     );
+    
+    // Second patch: Add safety checks before any _source usage
+    patchedContent = patchedContent.replace(
+      /(_source\.(\w+))/g,
+      '(_source && _source.$2)'
+    );
+    
+    // Third patch: Add a global safety mechanism at the beginning of the file
+    const safetyCode = `
+// PATCHED_FOR_SOURCE_ISSUE - Global safety mechanism
+function ensureSafeSource(obj) {
+  if (!obj || typeof obj !== 'object') return { value: "", get() { return this.value; }, set(v) { this.value = v; } };
+  return obj;
+}
+`;
+    
+    patchedContent = safetyCode + patchedContent;
     
     // Write the patched content back
     fs.writeFileSync(routeLoaderPath, patchedContent, 'utf8');
