@@ -94,6 +94,27 @@ const nextConfig = {
   },
 
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    // Provide polyfills for browser globals when running on the server
+    if (isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false
+      };
+      
+      // Define global objects that might be referenced in vendor code
+      config.plugins.push(
+        new webpack.DefinePlugin({
+          'self': 'globalThis',
+          'window': 'globalThis',
+          'document': 'undefined',
+          'navigator': 'undefined',
+          'localStorage': 'undefined'
+        })
+      );
+    }
+    
     // Optimize bundle size
     config.optimization.splitChunks = {
       chunks: "all",
